@@ -4,7 +4,7 @@
 
 Pipeline: `logistics_helper_v3_build_pipeline.md` (5 agents). Status: **all 5 agents done, verified**.
 Follow-ups Task A (same-run fixtures) + Task B (dead-file deletion) + Tasks C/D (README count, supplier browser) + Tasks E/F (dedupe key, PO PDF) + Task G (Phase 5 audit): **done, verified** (G4 physical-device test is human-run — checklist below).
-Verification: `npx vitest run` → **9 files, 27 tests, all pass**. `npx vite build` → **green**.
+Verification: `npx vitest run` → **13 files, 34 tests, all pass**. `npx vite build` → **green**.
 
 ## Agent 1 — Parser ✅ (Task A: deep equality, 2026-09-11)
 Files: `src/utils/importParser/{detectFormat,mdReader,xlsxReader,normalize,index}.js`
@@ -51,7 +51,7 @@ and tested); `PoScreen` also re-checks the gate itself and renders a blocked pan
 The old DSG-B-only flow in `App.jsx` was replaced; its dead utils are now deleted (Task B).
 
 ## Agent 5 — QA ✅
-Files: `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField}.test.{js,jsx}` (Vitest). 27/27 pass.
+Files: `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport}.test.{js,jsx}` (Vitest). 34/34 pass.
 `poGate.test.js` seeds the **real MD sample** (52 lines, 6 open confirmations) and asserts
 PO-request → Confirm redirect, then gate opens after resolving all.
 Test-count note: 14 → 11 was the Task A rewrite (7 shape-only parser tests consolidated into
@@ -116,6 +116,46 @@ centrally, plus a numbered-`#` guard so note/total rows can't leak in as items. 
 (deep-equality still holds, no regression). Regression-locked by
 `tests/fixtures/Surau_Darul_Dakwah_BOM.md` + 2 new parser cases (not deep-equal to Qwen —
 different export wording, same anchor values).
+Note: root `Surau_Darul_Dakwah_BOM_A7_Grounded_Sourcing.md` is byte-identical (same SHA)
+to the Qwen fixture — same file under two names, parses 52/6/14/5 with no changes.
+
+## Task H1 — xlsx import crash ✅ (2026-09-11, blocking)
+Reproduced exactly (`Import failed: Cannot read properties of undefined (reading 'map')`)
+by driving the real xlsx through the UI path in jsdom. Root cause: a missing `await` on
+async `parseXlsx` inside `parseImport` shipped a Promise as ParsedImport (unit tests always
+awaited it directly, so only the UI path crashed). Fixed + hardened: every sheet/section
+parse resolves non-arrays to `[]`, `buildParsedImport` tolerates explicit `null`, new
+`friendlyImportError` (password/corrupt/empty → specific messages, raw JS strings go to
+console only), `isEmptyImport` guard refuses content-less files without creating a project.
+Regression: `tests/xlsxUiImport.test.jsx` (real xlsx → 52/6/14 through the UI + message mapping).
+
+## Task H2 — reimport routing + suppliers ✅ (2026-09-11, most important)
+Investigation first: the seed path was correct — a fresh import always seeded. The "98
+pendings + no suppliers" came from the MATCH path: a second import of the same project
+merged (by design) but merge never touched suppliers, and cross-run item keys queued
+everything as pending (52 new + 44 removed + questions ≈ the reported count). Fix: new
+`src/logic/reimportProject.js` orchestrator (merge diff + supplier linking via the shared
+rule; `mergeEngine.js` untouched), wired into `ProjectsScreen`. `tests/reimport.test.js`
+(3 tests): clean re-import, price+supplier update without dupes, new-line pending intact.
+
+## Task H3 — tappable edit targets ✅ (2026-09-11)
+The wire-up existed and was tested (G3) — users tapped the qty/price VALUES, which weren't
+clickable, only the small Edit buttons. Qty + unit-cost cells now open the same
+`supervisorEdit` editor (cursor pointer, larger padding, 🔒 shown inline in the cell).
+No logic touched. G3's assertion updated for the new "99 🔒" cell text.
+
+## Task I — project deletion ✅ (2026-09-11, new scope)
+Two-tap Delete per project on `ProjectsScreen` ("Tap again to confirm delete") over the
+existing cascading `deleteProject` (BOM, confirmations, links, log go; `GlobalSupplier`
+records survive — verified). `tests/projectDelete.test.js`: cascade exact, survivor link
+intact, supplier re-linkable from a new project. This is also the cleanup path for H2-style
+compounded imports: delete the messy project, re-import clean.
+
+## Task J — fresh-import e2e ✅ (2026-09-11)
+`tests/e2eFreshImport.test.jsx`: brand-new project, real `.md`, first import through the UI
+(not a repo call) → exactly 52 BOM / 6 confirm (all `agent_question`, zero spurious pendings)
+/ 14 suppliers; then a value-cell edit persists and locks. The scenario that hid H2/H3 is
+now the suite's strictest test.
 
 ## Environment fixes (pre-existing, not pipeline scope)
 - `npm install` fails with arborist `edgesOut` on this machine (vitest peer graph) → use

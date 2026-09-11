@@ -34,7 +34,7 @@ tests/
 ```bash
 npm install --legacy-peer-deps   # plain `npm install` hits an arborist bug on vitest peers
 npm run dev
-npx vitest run                   # 27/27 must pass
+npx vitest run                   # 34/34 must pass
 npx vite build
 ```
 

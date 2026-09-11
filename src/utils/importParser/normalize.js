@@ -124,12 +124,16 @@ export const extractProjectTitle = (headerText, fallback = '') => {
 };
 
 /** Build final ParsedImport with required keys, empty arrays for absent sections. */
-export const buildParsedImport = ({ projectTitle, bomItems = [], shortageConfirmItems = [], supplierEntries = [], changeLogFromAgent = [] }) => ({
-  projectTitle: projectTitle && String(projectTitle).trim() ? String(projectTitle).trim() : 'UNKNOWN PROJECT',
-  bomItems: bomItems.map(normalizeBomItem).filter((b) => b.item !== null),
-  shortageConfirmItems: shortageConfirmItems.map(normalizeShortageItem).filter((s) => s.issue !== null || s.confirmationRequired !== null),
-  supplierEntries: supplierEntries.map(normalizeSupplierEntry).filter((s) => s.businessName !== null),
-  changeLogFromAgent: changeLogFromAgent.map(normalizeChangeLog).filter((c) => c && c.description !== null),
-});
+export const buildParsedImport = ({ projectTitle, bomItems = [], shortageConfirmItems = [], supplierEntries = [], changeLogFromAgent = [] }) => {
+  // Array.isArray (not just defaults): an explicit null must also resolve to [], never crash .map.
+  const arr = (v) => (Array.isArray(v) ? v : []);
+  return {
+    projectTitle: projectTitle && String(projectTitle).trim() ? String(projectTitle).trim() : 'UNKNOWN PROJECT',
+    bomItems: arr(bomItems).map(normalizeBomItem).filter((b) => b.item !== null),
+    shortageConfirmItems: arr(shortageConfirmItems).map(normalizeShortageItem).filter((s) => s.issue !== null || s.confirmationRequired !== null),
+    supplierEntries: arr(supplierEntries).map(normalizeSupplierEntry).filter((s) => s.businessName !== null),
+    changeLogFromAgent: arr(changeLogFromAgent).map(normalizeChangeLog).filter((c) => c && c.description !== null),
+  };
+};
 
 export default buildParsedImport;

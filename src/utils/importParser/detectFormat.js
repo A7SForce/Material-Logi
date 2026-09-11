@@ -63,7 +63,39 @@ export const parseImport = async (input, filename = '') => {
     return { format, parsed: parseMarkdown(text) };
   }
   const buffer = await blobToArrayBuffer(input);
-  return { format, parsed: parseXlsx(buffer) };
+  // NOTE: parseXlsx is async — a missing await here once shipped a Promise as
+  // ParsedImport, crashing downstream with "Cannot read properties of undefined".
+  return { format, parsed: await parseXlsx(buffer) };
+};
+
+/**
+ * Map any import failure to a specific, readable message. Raw JS error strings
+ * (e.g. "Cannot read properties of undefined") must never reach the screen —
+ * log those to the console for debugging instead.
+ */
+export const friendlyImportError = (err) => {
+  const msg = String((err && err.message) || err || '');
+  if (/password|encrypted|decrypt/i.test(msg)) {
+    return "Couldn't read this file — it may be password-protected. Remove the password and try again.";
+  }
+  if (/unsupported|not a valid|corrupt|unexpected end|truncat|bad file/i.test(msg)) {
+    return "Couldn't read this file — it looks corrupt or isn't a real .md/.xlsx file. Re-export it from the source.";
+  }
+  if (/no recognizable|empty|no sheets|no content/i.test(msg)) {
+    return "No recognizable BOM section found — check the file matches the expected 8-section Agent 6/7 format.";
+  }
+  return "Couldn't read this file — check it matches the expected 8-section .md/.xlsx format.";
+};
+
+/** True when a ParsedImport carries zero usable content in every section. */
+export const isEmptyImport = (parsed) => {
+  if (!parsed) return true;
+  return (
+    (parsed.bomItems || []).length === 0 &&
+    (parsed.shortageConfirmItems || []).length === 0 &&
+    (parsed.supplierEntries || []).length === 0 &&
+    (parsed.changeLogFromAgent || []).length === 0
+  );
 };
 
 export default parseImport;

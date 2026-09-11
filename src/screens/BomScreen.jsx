@@ -29,6 +29,9 @@ export default function BomScreen({ projectId }) {
   const reload = async () => setItems(await listBomItems(projectId));
   useEffect(() => { reload(); }, [projectId]);
 
+  const openEditor = (item, field, type) =>
+    setEditing({ id: item.id, field, value: item[field] ?? '', type });
+
   const saveEdit = async () => {
     if (!editing) return;
     const num = editing.type === 'number' ? Number(editing.value) : editing.value;
@@ -71,15 +74,28 @@ export default function BomScreen({ projectId }) {
                         <button
                           key={field}
                           style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', marginRight: '0.25rem' }}
-                          onClick={() => setEditing({ id: item.id, field, value: item[field] ?? '', type })}
+                          onClick={() => openEditor(item, field, type)}
                         >
                           Edit {label}{locked.includes(field) ? ' 🔒' : ''}
                         </button>
                       ))}
                     </div>
                   </td>
-                  <td style={{ textAlign: 'right', padding: '0.5rem' }}>{formatNumber(item.purchaseQty)}</td>
-                  <td style={{ textAlign: 'right', padding: '0.5rem' }}>{formatCurrency(item.unitCost)}</td>
+                  {/* Value cells are tap targets too — same editor as the buttons above. */}
+                  <td
+                    title="Tap to edit purchase quantity"
+                    onClick={() => openEditor(item, 'purchaseQty', 'number')}
+                    style={{ textAlign: 'right', padding: '0.75rem 0.5rem', cursor: 'pointer' }}
+                  >
+                    {formatNumber(item.purchaseQty)}{locked.includes('purchaseQty') ? ' 🔒' : ''}
+                  </td>
+                  <td
+                    title="Tap to edit unit cost"
+                    onClick={() => openEditor(item, 'unitCost', 'number')}
+                    style={{ textAlign: 'right', padding: '0.75rem 0.5rem', cursor: 'pointer' }}
+                  >
+                    {formatCurrency(item.unitCost)}{locked.includes('unitCost') ? ' 🔒' : ''}
+                  </td>
                   <td style={{ textAlign: 'right', padding: '0.5rem' }}>{formatCurrency(item.estTotal)}</td>
                 </tr>
               );
@@ -92,6 +108,7 @@ export default function BomScreen({ projectId }) {
         <div className="card" style={{ marginTop: '1rem' }}>
           <h3>Edit {editing.field} (will lock the field)</h3>
           <input
+            autoFocus
             type={editing.type}
             value={editing.value}
             onChange={(e) => setEditing({ ...editing, value: e.target.value })}

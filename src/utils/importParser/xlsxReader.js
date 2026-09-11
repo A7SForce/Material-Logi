@@ -63,6 +63,7 @@ const findHeaderRow = (rows, extraSignals) => {
 };
 
 const parseBomSheet = (rows) => {
+  if (!Array.isArray(rows)) return [];
   const hIdx = findHeaderRow(rows, /unit cost|unit price|est total|wastage|spec|basis|confidence|pack/);
   if (hIdx < 0) return [];
   const header = rows[hIdx];
@@ -112,6 +113,7 @@ const parseBomSheet = (rows) => {
 };
 
 const parseShortageSheet = (rows) => {
+  if (!Array.isArray(rows)) return [];
   const hIdx = findHeaderRow(rows, /severity|confirm|missing/);
   let headerIdx = hIdx;
   if (headerIdx < 0) {
@@ -145,6 +147,7 @@ const parseShortageSheet = (rows) => {
 };
 
 const parseSupplierSheet = (rows) => {
+  if (!Array.isArray(rows)) return [];
   let headerIdx = -1;
   for (let r = 0; r < Math.min(rows.length, 15); r++) {
     const joined = rows[r].map((c) => H(c)).join(' ');
@@ -177,6 +180,7 @@ const parseSupplierSheet = (rows) => {
 };
 
 const parseChangeLogSheet = (rows) => {
+  if (!Array.isArray(rows)) return [];
   let headerIdx = -1;
   for (let r = 0; r < Math.min(rows.length, 15); r++) {
     const joined = rows[r].map((c) => H(c)).join(' ');
@@ -203,7 +207,9 @@ const parseChangeLogSheet = (rows) => {
 };
 
 const sheetToRows = (sheet) => {
+  if (!sheet) return [];
   const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: true });
+  if (!Array.isArray(rows)) return [];
   return rows.map((r) => (Array.isArray(r) ? r : []).map((c) => (c === undefined || c === null ? '' : c)));
 };
 
@@ -215,9 +221,12 @@ export const parseWorkbook = (workbook) => {
   let changeLogFromAgent = [];
   let titleHint = '';
 
-  for (const name of workbook.SheetNames) {
+  // A corrupt/foreign file can read without SheetNames — resolve to empty, never crash.
+  const names = workbook && Array.isArray(workbook.SheetNames) ? workbook.SheetNames : [];
+  const sheets = (workbook && workbook.Sheets) || {};
+  for (const name of names) {
     const role = SHEET_ROLE(name);
-    const rows = sheetToRows(workbook.Sheets[name]);
+    const rows = sheetToRows(sheets[name]);
     if (rows.length === 0) continue;
     // Capture project title hint from first rows of master/dashboard sheets
     if ((role === 'bom' || role === 'dashboard') && !titleHint) {

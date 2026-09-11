@@ -92,18 +92,18 @@ Mobile-first: bottom-30% primary actions, deterministic progress text, specific 
 |---|---|---|
 | §2.1 Import Parser (`detectFormat/mdReader/xlsxReader/normalize`) | `src/utils/importParser/` (+ `index.js`) | ✅ Done, tested vs both sample files |
 | §2.2 Project Matcher | `src/logic/projectMatcher.js` (+ `src/logic/itemMatcher.js`) | ✅ Done; auto-create on no-match per spec |
-| §2.3 Merge Engine | `src/logic/mergeEngine.js` (+ `seedProject.js` first-import path, `approvePending.js` Confirm actions) | ✅ Done, 3/3 merge cases pass |
+| §2.3 Merge Engine | `src/logic/mergeEngine.js` (+ `seedProject.js` first-import path, `approvePending.js` Confirm actions, `reimportProject.js` match-path orchestrator: merge + supplier link) | ✅ Done, 3/3 merge cases pass |
 | §2.4 Data Layer | `src/data/{db,schema,projectRepo,bomRepo,supplierRepo,shortageRepo,changeLogRepo}.js` | ✅ Done (`shortageRepo` added: schema table had no owning repo file) |
-| `ProjectsList` | `src/screens/ProjectsScreen.jsx` | ✅ Done |
+| `ProjectsList` | `src/screens/ProjectsScreen.jsx` (import + two-tap project delete) | ✅ Done |
 | `FileUploader` | Import control inside `ProjectsScreen.jsx` (no separate file) | ✅ Done, see Deltas D2 |
 | `Dashboard` | `src/screens/DashboardScreen.jsx` (recent changes inline = Change Log link) | ✅ Done |
-| `BOMReview` | `src/screens/BomScreen.jsx` (purchase view + inline edit + 🔒 indicators) | ✅ Done, see Deltas D3 |
+| `BOMReview` | `src/screens/BomScreen.jsx` (purchase view + inline edit + 🔒 indicators; qty/price cells are tap targets) | ✅ Done, see Deltas D3 |
 | `ConfirmQueue` | `src/screens/ConfirmScreen.jsx` (kind badges; Approve/Dismiss via `approvePending`) | ✅ Done, see Deltas D4 |
 | `SupplierDirectory` + global browser | `src/screens/SuppliersScreen.jsx` (per-project list + searchable Global Directory browser; links run the shared `supplierLinking.js` rule) | ✅ Done (D5 closed 2026-09-11) |
 | `POGenerator` + WhatsApp | `src/screens/PoScreen.jsx` (Generate PO → jspdf bytes download; wa.me link derived from PDF state, gate unchanged) + `src/logic/poDocument.js` (lines/TBD totals/PDF/link builders) | ✅ Done (D6 closed 2026-09-11) |
 | PO gate rule | `src/screens/poGate.js` (`getPoGate` / `resolveTabRequest`, pure + tested) | ✅ Done |
 | App shell / tab bar | `src/App.jsx` (Projects entry → 5-tab project context) | ✅ Done |
-| Tests | `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField}.test.{js,jsx}` (27/27 pass) + `tests/fixtures/` | ✅ Done |
+| Tests | `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport}.test.{js,jsx}` (34/34 pass) + `tests/fixtures/` | ✅ Done |
 
 ## Annex B — Conformance Deltas (decisions, do not revert without a new entry here)
 
@@ -147,8 +147,20 @@ Mobile-first: bottom-30% primary actions, deterministic progress text, specific 
   state is render-scoped (fresh repo read on every mount — tab switches remount — plus
   reload-after-every-mutation); no persistent cross-screen cache exists to drift. Guarded by
   `tests/singleSource.test.js` (static zero-bypass scan + `getSupplier` round-trip).
+- **D11 — Import robustness (Task H1).** A missing `await` on async `parseXlsx` shipped a
+  Promise as ParsedImport down the UI path (unit tests awaited it directly, so only the app
+  crashed with "Cannot read properties of undefined (reading 'map')"). Fixed; every
+  sheet/section parse resolves non-arrays to `[]`; `friendlyImportError` maps failures to
+  readable messages (raw JS strings to console only); `isEmptyImport` refuses content-less
+  files without creating a project. Regression: `tests/xlsxUiImport.test.jsx`.
+- **D12 — Re-import links suppliers (Task H2).** The match path merged BOM rows but never
+  suppliers, and cross-run re-imports queued everything as pending — the "98 pendings, no
+  suppliers" report. `reimportProject.js` runs merge + shared supplier linking;
+  `mergeEngine.js` untouched. Compounded state is cleaned via project delete (Task I).
+- **D13 — Project deletion (Task I, new scope).** Two-tap Delete on `ProjectsScreen` over
+  cascading `deleteProject` (own rows go; shared `GlobalSupplier` records survive).
 
-## Annex C — Agent Work Queue (ordered; Phase 2–4 done, verified 27/27 + prod build green)
+## Annex C — Agent Work Queue (ordered; Phase 2–4 done, verified 34/34 + prod build green)
 
 1. **~~Delete dead v1 files~~ DONE 2026-09-11 (Task B):** `src/utils/excelParser/dsgB.js`,
    `src/data/structuralKits.js`, `src/utils/coverageRules.js` deleted (empty parent dirs removed).

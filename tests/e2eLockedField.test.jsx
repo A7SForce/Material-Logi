@@ -80,7 +80,7 @@ describe('G3: locked field survives a UI re-import', () => {
     // 4. Locked value holds on screen and in storage; log is exact.
     const bom2 = render(<BomScreen projectId={projectId} />);
     const row2 = await gypsumRow();
-    expect(within(row2).getByText('99')).toBeDefined();
+    expect(within(row2).getByText(/99/)).toBeDefined(); // qty cell now reads "99 🔒"
     expect(within(row2).getByText('RM 30.00')).toBeDefined(); // unlocked field merged
     const after = (await listBomItems(projectId)).find((b) => b.item === 'Gypsum Board 9mm');
     expect({ purchaseQty: after.purchaseQty, unitCost: after.unitCost }).toEqual({
