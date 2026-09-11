@@ -48,3 +48,8 @@ __pycache__/
 *.lz
 *.lzo
 ```.next/
+
+.vercel
+
+# Vercel project linkage (local only)
+.vercel/
