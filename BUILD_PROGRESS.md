@@ -177,6 +177,7 @@ Agent 6/7 BOM producers, multi-user backend. (PO PDF + WhatsApp landed in Task F
   No GitHub auto-deploy wired (project was created from local files); connect the
   repo in Project Settings → Git for push-to-deploy.
 - Redeploy 2026-09-11 (md rework): 27/27 green, build green, pushed + redeployed.
+- Redeploy 2026-09-11 (H1/H2/H3/I/J): 34/34 green, build green, pushed (05af8cd) + redeployed production Ready.
 
 ## Run
 `npm install --legacy-peer-deps` · `npm run dev` · `npx vitest run` · `npx vite build`
