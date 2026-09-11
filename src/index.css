@@ -37,10 +37,10 @@ body {
   flex-direction: column;
 }
 
-/* Touch-friendly sizing */
+/* Touch-friendly sizing (spec: 48x48px minimum on all interactive elements) */
 button, .btn {
-  min-height: 44px;
-  min-width: 44px;
+  min-height: 48px;
+  min-width: 48px;
   padding: 0.75rem 1rem;
   font-size: 1rem;
   border-radius: 0.5rem;
@@ -49,7 +49,8 @@ button, .btn {
 }
 
 input, select, textarea {
-  min-height: 44px;
+  min-height: 48px;
+  min-width: 48px;
   font-size: 1rem;
   padding: 0.75rem;
   border-radius: 0.5rem;
@@ -80,12 +81,18 @@ input, select, textarea {
   border: none;
   color: var(--text-muted);
   font-size: 0.75rem;
-  min-height: auto;
+  min-height: 48px;
   padding: 0.5rem;
 }
 
 .tab-bar button.active {
   color: var(--primary);
+}
+
+/* Text links styled as tap targets */
+a.btn {
+  display: inline-flex;
+  align-items: center;
 }
 
 /* Utility classes */
