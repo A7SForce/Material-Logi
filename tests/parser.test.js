@@ -23,6 +23,9 @@ import { parseXlsx } from '../src/utils/importParser/xlsxReader.js';
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const mdText = fs.readFileSync(path.join(dir, 'fixtures/Qwen_markdown_20260910_k171vvnlq.md'), 'utf8');
+// Pandas-export variant (same project, earlier export, title/metadata rows above
+// the true header row, Unnamed: columns, 6 sections, no supplier/change-log sheets).
+const pandasText = fs.readFileSync(path.join(dir, 'fixtures/Surau_Darul_Dakwah_BOM.md'), 'utf8');
 const xlsxBuf = fs.readFileSync(
   path.join(dir, 'fixtures/Surau_Darul_Dakwah_BOM_A7_Grounded_Sourcing.xlsx')
 );
@@ -64,5 +67,27 @@ describe('parser acceptance: same run, both formats, deep-equal ParsedImport', (
     const xlsx = await parseXlsx(xlsxAb);
     expect(Array.isArray(xlsx.supplierEntries)).toBe(true);
     expect(Array.isArray(xlsx.changeLogFromAgent)).toBe(true);
+  });
+});
+
+describe('parser acceptance: pandas-export md variant (title rows above header)', () => {
+  it('extracts all 52 lines + 6 confirmations instead of nothing', () => {
+    const p = parseMarkdown(pandasText);
+    expect(p.projectTitle).toBe('SURAU DARUL DAKWAH');
+    expect(p.bomItems).toHaveLength(52);
+    expect(p.shortageConfirmItems).toHaveLength(6);
+    // This variant genuinely has no supplier directory / change log sections.
+    expect(p.supplierEntries).toEqual([]);
+    expect(p.changeLogFromAgent).toEqual([]);
+  });
+
+  it('emits the contract shape with matching anchor values', () => {
+    const p = parseMarkdown(pandasText);
+    for (const row of p.bomItems) expect(Object.keys(row).sort()).toEqual([...BOM_KEYS].sort());
+    const gypsum = p.bomItems.find((r) => r.item === 'Gypsum Board 9mm');
+    expect(gypsum).toMatchObject({ netQty: 10, purchaseQty: 12, unitCost: 28, estTotal: 336 });
+    expect(p.shortageConfirmItems[0]).toMatchObject({ severity: 'MEDIUM', owner: 'Purchasing' });
+    // Note/total rows must not leak in as items.
+    expect(p.bomItems.some((r) => /MATERIAL TOTAL|Labour, transport/i.test(r.item || ''))).toBe(false);
   });
 });

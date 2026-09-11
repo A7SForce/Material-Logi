@@ -43,7 +43,12 @@ export const classifySection = (header) => {
   return 'other';
 };
 
-/** Parse all markdown tables in a section's lines. Returns array of { header, rows }. */
+/** Parse all markdown tables in a section's lines. Returns array of { rows }.
+ *
+ *  No header assumption: pandas-export variants put a title row + metadata rows
+ *  before the true column-header row, so each typed parser below locates its own
+ *  header by content. Separator rows (| --- |) are stripped here.
+ */
 export const parseTables = (lines) => {
   const tables = [];
   let i = 0;
@@ -56,14 +61,16 @@ export const parseTables = (lines) => {
     }
     if (block.length >= 2) {
       const splitRow = (r) => r.replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
-      const header = splitRow(block[0]);
-      // block[1] is the separator row (---); data starts at block[2]
-      const rows = block.slice(2).map(splitRow);
-      tables.push({ header, rows });
+      const rows = block.map(splitRow).filter((r) => !isSeparatorRow(r));
+      if (rows.length > 0) tables.push({ rows });
     }
   }
   return tables;
 };
+
+/** A markdown separator row: every cell is dashes (| --- | --- |). */
+export const isSeparatorRow = (row) =>
+  row.length > 0 && row.every((c) => /^:?-+:?$/.test(String(c).trim()));
 
 const colIndex = (header, patterns) => {
   for (let i = 0; i < header.length; i++) {
@@ -94,16 +101,22 @@ const isAggregateRow = (rowText) =>
 export const parseBomTables = (tables) => {
   const items = [];
   for (const t of tables) {
-    const h = t.header;
-    const hasItem = colIndex(h, [/^item$/, /item \/ issue/, /^material/]) >= 0;
-    const hasQty = colIndex(h, [/net qty/, /purchase qty/, /order qty/, /\bqty\b/]) >= 0;
-    if (!hasItem || !hasQty) continue;
+    // True header row: carries Item + Qty + a BOM signal. Title/metadata rows above it fail this.
+    const hi = t.rows.findIndex((r) => {
+      const hasItem = colIndex(r, [/^item$/, /item issue/]) >= 0;
+      const hasQty = colIndex(r, [/net qty/, /purchase qty/, /order qty/, /\bqty\b/]) >= 0;
+      const hasSignal = colIndex(r, [/unit cost/, /unit price/, /est total/, /wastage/, /\bspec\b/, /purchase qty/, /net qty/]) >= 0;
+      return hasItem && hasQty && hasSignal;
+    });
+    if (hi < 0) continue;
+    const h = t.rows[hi];
     // Skip non-BOM tables (shortage/supplier) that also have "item" words:
     // BOM tables must have a purchase/net qty AND (unit cost | est total | wastage | spec)
-    const hasBomSignal = colIndex(h, [/unit cost/, /est total/, /wastage/, /\bspec\b/, /purchase qty/, /net qty/]) >= 0;
+    const hasBomSignal = colIndex(h, [/unit cost/, /unit price/, /est total/, /wastage/, /\bspec\b/, /purchase qty/, /net qty/]) >= 0;
     if (!hasBomSignal) continue;
 
     const idx = {
+      num: colIndex(h, [/^#$/, /^no\.?$/, /number/]),
       category: colIndex(h, [/^system/, /^category/]),
       item: colIndex(h, [/^item$/, /item issue/]),
       spec: colIndex(h, [/\bspec\b/, /spec \/ pack/]),
@@ -120,9 +133,12 @@ export const parseBomTables = (tables) => {
     };
     // Fallback: unnamed pandas columns — positional mapping for known 14-col Master BOM
     const positional = idx.item < 0 && h.filter((c) => !/^unnamed/i.test(c)).length <= 2;
-    for (const row of t.rows) {
+    for (const row of t.rows.slice(hi + 1)) {
       const joined = row.join(' ');
       if (!joined.trim() || isAggregateRow(joined)) continue;
+      // Numbered-line guard: when the header has a # column, data rows must be
+      // numbered — drops note/total/NaN rows that share the table block.
+      if (idx.num >= 0 && !/^\d+$/.test(cell(row, idx.num).trim())) continue;
       if (positional && row.length >= 10) {
         // # | System | Item | Spec | Unit | Net | Wastage | Purchase | Cost | Total | Basis | Conf | Pack | Notes
         const p = (n) => (row[n] !== undefined ? row[n] : '');
@@ -161,9 +177,12 @@ export const parseBomTables = (tables) => {
 export const parseShortageTables = (tables) => {
   const out = [];
   for (const t of tables) {
-    const h = t.header;
-    if (colIndex(h, [/severity/]) < 0) continue;
-    if (colIndex(h, [/confirm/]) < 0 && colIndex(h, [/missing|uncertain/]) < 0) continue;
+    const hi = t.rows.findIndex((r) =>
+      colIndex(r, [/severity/]) >= 0 &&
+      (colIndex(r, [/confirm/]) >= 0 || colIndex(r, [/missing/, /uncertain/, /what is/]) >= 0)
+    );
+    if (hi < 0) continue;
+    const h = t.rows[hi];
     const idx = {
       severity: colIndex(h, [/severity/]),
       issue: colIndex(h, [/item issue/, /^issue$/, /^item$/]),
@@ -171,7 +190,7 @@ export const parseShortageTables = (tables) => {
       confirmationRequired: colIndex(h, [/confirm/]),
       owner: colIndex(h, [/owner/]),
     };
-    for (const row of t.rows) {
+    for (const row of t.rows.slice(hi + 1)) {
       if (!row.join('').trim()) continue;
       out.push({
         severity: cell(row, idx.severity),
@@ -188,8 +207,9 @@ export const parseShortageTables = (tables) => {
 export const parseSupplierTables = (tables) => {
   const out = [];
   for (const t of tables) {
-    const h = t.header;
-    if (colIndex(h, [/business name/]) < 0) continue;
+    const hi = t.rows.findIndex((r) => colIndex(r, [/business name/]) >= 0);
+    if (hi < 0) continue;
+    const h = t.rows[hi];
     const idx = {
       businessName: colIndex(h, [/business name/]),
       contact: colIndex(h, [/whatsapp/, /contact/, /phone/]),
@@ -198,7 +218,7 @@ export const parseSupplierTables = (tables) => {
       logisticsNote: colIndex(h, [/logistics/]),
       sourceUrl: colIndex(h, [/source url/, /^source$/]),
     };
-    for (const row of t.rows) {
+    for (const row of t.rows.slice(hi + 1)) {
       if (!row.join('').trim()) continue;
       out.push({
         businessName: cell(row, idx.businessName),
@@ -216,19 +236,23 @@ export const parseSupplierTables = (tables) => {
 export const parseChangeLogTables = (tables) => {
   const out = [];
   for (const t of tables) {
-    const h = t.header;
-    const hasChange = colIndex(h, [/what changed/, /change/]) >= 0 || colIndex(h, [/\bwhy\b/]) >= 0;
-    const hasDate = colIndex(h, [/\bdate\b/]) >= 0;
-    if (!hasChange && !hasDate) continue;
-    // Avoid QA checklist tables (Check|Status) — require date or agent/what-changed
-    if (colIndex(h, [/\bcheck\b/]) >= 0 && !hasDate) continue;
+    const hi = t.rows.findIndex((r) => {
+      const hasChange = colIndex(r, [/what changed/, /change/]) >= 0 || colIndex(r, [/\bwhy\b/]) >= 0;
+      const hasDate = colIndex(r, [/\bdate\b/]) >= 0;
+      if (!hasChange && !hasDate) return false;
+      // Avoid QA checklist tables (Check|Status) — require date or agent/what-changed
+      if (colIndex(r, [/\bcheck\b/]) >= 0 && !hasDate && colIndex(r, [/\bagent\b/]) < 0) return false;
+      return true;
+    });
+    if (hi < 0) continue;
+    const h = t.rows[hi];
     const idx = {
       date: colIndex(h, [/\bdate\b/]),
       agent: colIndex(h, [/\bagent\b/]),
       what: colIndex(h, [/what changed/]),
       why: colIndex(h, [/\bwhy\b/]),
     };
-    for (const row of t.rows) {
+    for (const row of t.rows.slice(hi + 1)) {
       if (!row.join('').trim()) continue;
       const parts = [];
       const d = cell(row, idx.date); const a = cell(row, idx.agent);

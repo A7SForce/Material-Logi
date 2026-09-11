@@ -29,9 +29,9 @@ Correctness > Speed > Feature completeness > Polish.
 ├─► [6. Supplier Linker] ──► Global Supplier Directory ⇄ per-project links (never duplicate records)
 └─► [7. Change Log] ──► append-only, every entry tagged agent- or supervisor-made
 ▼ (zero unresolved Confirm items)
-[8. PO Generator] ──► deterministic PDF, "TBD" for missing price — never inferred (Phase 4, pending)
+[8. PO Generator] ──► deterministic PDF, "TBD" for missing price — never inferred (landed Task F)
 ▼
-[9. WhatsApp Deep-Link] ──► wa.me + po.pdf (Phase 4, pending)
+[9. WhatsApp Deep-Link] ──► wa.me + po.pdf (landed Task F)
 ```
 
 Removed in v2 (do not reintroduce — see Kill List): Quick-Kit Injector, Coverage Validator.
@@ -103,7 +103,7 @@ Mobile-first: bottom-30% primary actions, deterministic progress text, specific 
 | `POGenerator` + WhatsApp | `src/screens/PoScreen.jsx` (Generate PO → jspdf bytes download; wa.me link derived from PDF state, gate unchanged) + `src/logic/poDocument.js` (lines/TBD totals/PDF/link builders) | ✅ Done (D6 closed 2026-09-11) |
 | PO gate rule | `src/screens/poGate.js` (`getPoGate` / `resolveTabRequest`, pure + tested) | ✅ Done |
 | App shell / tab bar | `src/App.jsx` (Projects entry → 5-tab project context) | ✅ Done |
-| Tests | `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField}.test.{js,jsx}` (25/25 pass) + `tests/fixtures/` | ✅ Done |
+| Tests | `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField}.test.{js,jsx}` (27/27 pass) + `tests/fixtures/` | ✅ Done |
 
 ## Annex B — Conformance Deltas (decisions, do not revert without a new entry here)
 
@@ -148,7 +148,7 @@ Mobile-first: bottom-30% primary actions, deterministic progress text, specific 
   reload-after-every-mutation); no persistent cross-screen cache exists to drift. Guarded by
   `tests/singleSource.test.js` (static zero-bypass scan + `getSupplier` round-trip).
 
-## Annex C — Agent Work Queue (ordered; Phase 2–4 done, verified 25/25 + prod build green)
+## Annex C — Agent Work Queue (ordered; Phase 2–4 done, verified 27/27 + prod build green)
 
 1. **~~Delete dead v1 files~~ DONE 2026-09-11 (Task B):** `src/utils/excelParser/dsgB.js`,
    `src/data/structuralKits.js`, `src/utils/coverageRules.js` deleted (empty parent dirs removed).
@@ -171,7 +171,9 @@ Mobile-first: bottom-30% primary actions, deterministic progress text, specific 
 - Ground-truth fixtures: `tests/fixtures/Qwen_markdown_20260910_k171vvnlq.md`,
   `tests/fixtures/Surau_Darul_Dakwah_BOM_A7_Grounded_Sourcing.xlsx` — a true same-run pair
   (one Agent 6/7 run 2026-09-10, 52/6/14/5 in both; `parser.test.js` asserts deep equality).
-  A stale Sep-08 xlsx from a different run was replaced 2026-09-11 (Task A).
+  Plus `tests/fixtures/Surau_Darul_Dakwah_BOM.md` — pandas-export variant of the same project
+  (title/metadata rows above header, 6 sections; 52/6 parsed, regression-locked, not
+  deep-equal to Qwen by wording).
 
 > *"A site supervisor drops the reconciled file, sees which of their projects it belongs to,
 > resolves any open questions the agent flagged, taps through supplier assignment, generates a PO,

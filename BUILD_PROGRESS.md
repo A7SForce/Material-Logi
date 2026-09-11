@@ -4,7 +4,7 @@
 
 Pipeline: `logistics_helper_v3_build_pipeline.md` (5 agents). Status: **all 5 agents done, verified**.
 Follow-ups Task A (same-run fixtures) + Task B (dead-file deletion) + Tasks C/D (README count, supplier browser) + Tasks E/F (dedupe key, PO PDF) + Task G (Phase 5 audit): **done, verified** (G4 physical-device test is human-run — checklist below).
-Verification: `npx vitest run` → **9 files, 25 tests, all pass**. `npx vite build` → **green**.
+Verification: `npx vitest run` → **9 files, 27 tests, all pass**. `npx vite build` → **green**.
 
 ## Agent 1 — Parser ✅ (Task A: deep equality, 2026-09-11)
 Files: `src/utils/importParser/{detectFormat,mdReader,xlsxReader,normalize,index}.js`
@@ -51,13 +51,13 @@ and tested); `PoScreen` also re-checks the gate itself and renders a blocked pan
 The old DSG-B-only flow in `App.jsx` was replaced; its dead utils are now deleted (Task B).
 
 ## Agent 5 — QA ✅
-Files: `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField}.test.{js,jsx}` (Vitest). 25/25 pass.
+Files: `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField}.test.{js,jsx}` (Vitest). 27/27 pass.
 `poGate.test.js` seeds the **real MD sample** (52 lines, 6 open confirmations) and asserts
 PO-request → Confirm redirect, then gate opens after resolving all.
 Test-count note: 14 → 11 was the Task A rewrite (7 shape-only parser tests consolidated into
 4, with strictly stronger deep-equality assertions); 11 → 13 is Task D's new
-`supplierBrowser.test.js` (2 tests). Task B removed zero tests — nothing live
-depended on the deleted files.
+`supplierBrowser.test.js` (2 tests); 13 → 18 Tasks E/F; 18 → 25 Task G; 25 → 27 md rework.
+Task B removed zero tests — nothing live depended on the deleted files.
 
 ## Task B — Dead Kill-List files deleted ✅ (2026-09-11)
 Deleted: `src/utils/excelParser/dsgB.js`, `src/data/structuralKits.js`, `src/utils/coverageRules.js`
@@ -70,7 +70,7 @@ Phase 5 "zero Kill List items" audit now passes on presence (remaining Kill List
 never introduced).
 
 ## Task C — README count ✅ (2026-09-11)
-One line: `npx vitest run` comment 14/14 → 11/11 → 13/13 (Task D) → 18/18 (Tasks E/F) → 25 (Task G).
+One line: `npx vitest run` comment 14/14 → 11/11 → 13/13 (Task D) → 18/18 (Tasks E/F) → 25 (Task G) → 27 (md rework).
 
 ## Task D — Global supplier browser ✅ (2026-09-11, closes Delta D5)- New `src/logic/supplierLinking.js`: single home of the dedupe-by-normalized-businessName
   rule (`linkSupplierEntry`: find-or-create + link). `seedProject.js` refactored onto it —
@@ -106,6 +106,17 @@ case-variant cases pass unchanged. Spec D5 text updated to the hardened rule.
 - Spec: D6 logged done-with-date in Annex B, Annex A row reflects the deliverable, Phase 4
   marked done in Annex C item 2. D3 (audit toggle) deferred as agreed — untouched.
 
+## MD rework — pandas-export variant ✅ (2026-09-11)
+Root file `Surau_Darul_Dakwah_BOM.md` (pandas dump: title/metadata rows above the true
+header, `Unnamed:` columns, 6 sections, no supplier/change-log sections) parsed to
+all-zeros — `parseTables` assumed block[0] is the header. Fixed in `mdReader.js`: each
+typed parser now locates its own true header row by content, separator rows stripped
+centrally, plus a numbered-`#` guard so note/total rows can't leak in as items. Result:
+52 lines + 6 confirmations (was 0/0/0/0); Qwen + xlsx outputs byte-identical to before
+(deep-equality still holds, no regression). Regression-locked by
+`tests/fixtures/Surau_Darul_Dakwah_BOM.md` + 2 new parser cases (not deep-equal to Qwen —
+different export wording, same anchor values).
+
 ## Environment fixes (pre-existing, not pipeline scope)
 - `npm install` fails with arborist `edgesOut` on this machine (vitest peer graph) → use
   `npm install --legacy-peer-deps`. Generated `package-lock.json` is committed.
@@ -113,7 +124,19 @@ case-variant cases pass unchanged. Spec D5 text updated to the hardened rule.
 - `fake-indexeddb` placed in `devDependencies` (test-only).
 
 ## Explicitly NOT built (per spec)
-Agent 6/7 BOM producers, PO PDF generation, multi-user backend.
+Agent 6/7 BOM producers, multi-user backend. (PO PDF + WhatsApp landed in Task F.)
+
+## Deployment (Vercel, 2026-09-11)
+- Live: **https://material-logi.vercel.app** (production, Ready; also
+  `material-logi-nart7s-projects.vercel.app`). Project `material-logi` under the
+  personal Vercel scope, auto-detected as Vite (`vite build` → `dist`).
+- `.npmrc` (`legacy-peer-deps=true`) added so Vercel's `npm install` avoids the
+  vitest peer-graph arborist bug; `.vercel/` linkage gitignored (local only).
+- Open items: Deployment Protection (Vercel Authentication) is ON — the URL serves
+  an auth wall until disabled in Project Settings or opened via bypass token.
+  No GitHub auto-deploy wired (project was created from local files); connect the
+  repo in Project Settings → Git for push-to-deploy.
+- Redeploy 2026-09-11 (md rework): 27/27 green, build green, pushed + redeployed.
 
 ## Run
 `npm install --legacy-peer-deps` · `npm run dev` · `npx vitest run` · `npx vite build`

@@ -1,7 +1,7 @@
 # Logistics Helper v3
 
 > **Deterministic operations tool for construction logistics.**
-> Single source of truth: [`SYSTEM_SPEC.md`](./SYSTEM_SPEC.md) (v2.0.0 + Implementation Annex).
+> Live: https://material-logi.vercel.app · Single source of truth: [`SYSTEM_SPEC.md`](./SYSTEM_SPEC.md) (v2.0.0 + Implementation Annex).
 
 This app consumes finished 8-section BOM files (`.md`/`.xlsx`) produced upstream by the
 Agent 6 + Agent 7 pipeline — a separate system. It never produces BOMs, never guesses a
@@ -34,7 +34,7 @@ tests/
 ```bash
 npm install --legacy-peer-deps   # plain `npm install` hits an arborist bug on vitest peers
 npm run dev
-npx vitest run                   # 25/25 must pass
+npx vitest run                   # 27/27 must pass
 npx vite build
 ```
 
