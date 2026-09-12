@@ -4,7 +4,7 @@
 
 Pipeline: `logistics_helper_v3_build_pipeline.md` (5 agents). Status: **all 5 agents done, verified**.
 Follow-ups Task A (same-run fixtures) + Task B (dead-file deletion) + Tasks C/D (README count, supplier browser) + Tasks E/F (dedupe key, PO PDF) + Task G (Phase 5 audit): **done, verified** (G4 physical-device test is human-run — checklist below).
-Verification: `npx vitest run` → **13 files, 34 tests, all pass**. `npx vite build` → **green**.
+Verification: `npx vitest run` → **15 files, 43 tests, all pass**. `npx vite build` → **green**.
 
 ## Agent 1 — Parser ✅ (Task A: deep equality, 2026-09-11)
 Files: `src/utils/importParser/{detectFormat,mdReader,xlsxReader,normalize,index}.js`
@@ -51,7 +51,7 @@ and tested); `PoScreen` also re-checks the gate itself and renders a blocked pan
 The old DSG-B-only flow in `App.jsx` was replaced; its dead utils are now deleted (Task B).
 
 ## Agent 5 — QA ✅
-Files: `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport}.test.{js,jsx}` (Vitest). 34/34 pass.
+Files: `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport,redesignUi,approvePending}.test.{js,jsx}` (Vitest). 43/43 pass.
 `poGate.test.js` seeds the **real MD sample** (52 lines, 6 open confirmations) and asserts
 PO-request → Confirm redirect, then gate opens after resolving all.
 Test-count note: 14 → 11 was the Task A rewrite (7 shape-only parser tests consolidated into
@@ -70,7 +70,7 @@ Phase 5 "zero Kill List items" audit now passes on presence (remaining Kill List
 never introduced).
 
 ## Task C — README count ✅ (2026-09-11)
-One line: `npx vitest run` comment 14/14 → 11/11 → 13/13 (Task D) → 18/18 (Tasks E/F) → 25 (Task G) → 27 (md rework).
+One line: `npx vitest run` comment 14/14 → 11/11 → 13/13 (Task D) → 18/18 (Tasks E/F) → 25 (Task G) → 27 (md rework) → 34 (H-tasks) → 43 (redesign).
 
 ## Task D — Global supplier browser ✅ (2026-09-11, closes Delta D5)- New `src/logic/supplierLinking.js`: single home of the dedupe-by-normalized-businessName
   rule (`linkSupplierEntry`: find-or-create + link). `seedProject.js` refactored onto it —
@@ -156,6 +156,19 @@ compounded imports: delete the messy project, re-import clean.
 (not a repo call) → exactly 52 BOM / 6 confirm (all `agent_question`, zero spurious pendings)
 / 14 suppliers; then a value-cell edit persists and locks. The scenario that hid H2/H3 is
 now the suite's strictest test.
+
+## Redesign — full-scale UI/UX ✅ (2026-09-11, pipeline `material_logi_ui_ux_redesign_multi_agent_pipeline.md`)
+Phases 0–5 executed with handoffs in `docs/redesign/handovers/01–07`, decision register,
+summary, and QA evidence in `docs/redesign/`. Direction A (Site Ledger) locked 8.15–6.95.
+Delivered: token foundation, text tabs + live Confirm badge, import progress copy, BOM
+row-list with keyboardable cells, grouped Confirm, diary Dashboard, labelled search, TBD
+row-list PO, "Open in WhatsApp" honesty copy, 150/120ms motion with reduced-motion kill.
+Two correctness fixes from evidence: PO banner erased by tab effect (fixed + persistence
+test), "Send via WhatsApp" implied sending (fixed). 34 → 43 tests (redesignUi 5,
+approvePending 3, touchTargets +1). Before/after shots (8+8+2) via re-runnable
+`docs/redesign/artifacts/shoot*.mjs`. Invariants all PASS (07); kill-list grep zero.
+G4 physical-device run remains human-open. Primary color moved #0284c7 → #0369a1 on
+computed contrast evidence (4.10 fail → 5.93 pass).
 
 ## Environment fixes (pre-existing, not pipeline scope)
 - `npm install` fails with arborist `edgesOut` on this machine (vitest peer graph) → use

@@ -76,14 +76,16 @@ export default function SuppliersScreen({ projectId }) {
       )}
 
       {browsing && (
-        <div className="card" style={{ marginBottom: '0.5rem' }}>
+        <div className="card anim-panel" style={{ marginBottom: '0.5rem' }}>
           <h3>Global Supplier Directory ({visible.length}/{directory.length})</h3>
+          <label className="small" htmlFor="supplier-search">Search suppliers</label>
           <input
+            id="supplier-search"
             type="search"
             placeholder="Search name, specialty, address (e.g. Kuching)…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            style={{ width: '100%', marginTop: '0.5rem' }}
+            style={{ width: '100%', marginTop: '0.25rem' }}
           />
           {allTags.length > 0 && (
             <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>

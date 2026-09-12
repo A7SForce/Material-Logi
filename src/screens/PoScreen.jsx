@@ -73,8 +73,8 @@ export default function PoScreen({ projectId, onGoConfirm }) {
     return (
       <div className="container">
         <h1>Purchase Order</h1>
-        <div className="card" style={{ background: '#fef2f2', marginTop: '1rem' }}>
-          <h3 style={{ color: 'var(--error)' }}>⛔ PO blocked — open confirmations</h3>
+        <div className="banner blocked" role="alert" style={{ marginTop: '1rem' }}>
+          <h3>⛔ PO blocked — open confirmations</h3>
           <p>Resolve every item on the Confirm tab before generating a PO.</p>
           <button onClick={onGoConfirm} style={{ marginTop: '0.5rem' }}>Go to Confirm</button>
         </div>
@@ -85,29 +85,20 @@ export default function PoScreen({ projectId, onGoConfirm }) {
   return (
     <div className="container">
       <h1>Purchase Order</h1>
-      <div className="card" style={{ margin: '1rem 0' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ borderBottom: '2px solid var(--border)' }}>
-              <th style={{ textAlign: 'left', padding: '0.5rem' }}>Item</th>
-              <th style={{ textAlign: 'right', padding: '0.5rem' }}>Qty</th>
-              <th style={{ textAlign: 'right', padding: '0.5rem' }}>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {lines.map((l, i) => (
-              <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
-                <td style={{ padding: '0.5rem' }}>{l.item}</td>
-                <td style={{ textAlign: 'right', padding: '0.5rem' }}>
-                  {l.qty === null ? 'TBD' : `${formatNumber(l.qty)} ${l.unit || ''}`}
-                </td>
-                <td style={{ textAlign: 'right', padding: '0.5rem' }}>
-                  {l.lineTotal === null ? 'TBD' : formatMoney(l.lineTotal)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="rowlist" style={{ margin: '1rem 0' }}>
+        {lines.map((l, idx) => (
+          <div key={idx} className="row" style={{ display: 'flex', gap: '1rem', alignItems: 'baseline' }}>
+            <div style={{ flex: 1 }}><strong>{l.item}</strong></div>
+            <div style={{ textAlign: 'right' }}>
+              <div className="small" style={{ color: 'var(--text-muted)' }}>
+                {l.qty === null ? 'TBD' : `${formatNumber(l.qty)} ${l.unit || ''}`}
+              </div>
+              <div className={`money ${l.lineTotal === null ? 'tbd' : ''}`}>
+                {l.lineTotal === null ? 'TBD' : formatMoney(l.lineTotal)}
+              </div>
+            </div>
+          </div>
+        ))}
         <div style={{ textAlign: 'right', marginTop: '0.5rem' }}>
           <strong>Total (priced lines): {formatMoney(total)}</strong>
         </div>
@@ -121,9 +112,12 @@ export default function PoScreen({ projectId, onGoConfirm }) {
 
       {waLink && (
         <div className="card" style={{ marginTop: '1rem' }}>
-          <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{pdfName} ready.</div>
+          <div style={{ fontSize: '0.875rem' }}>Purchase order generated. Not sent.</div>
+          <div className="small" style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+            {pdfName} ready. Opening WhatsApp only opens a chat link — the app does not send anything.
+          </div>
           <a href={waLink} target="_blank" rel="noreferrer">
-            <button style={{ width: '100%', marginTop: '0.5rem' }}>Send via WhatsApp</button>
+            <button style={{ width: '100%', marginTop: '0.5rem' }}>Open in WhatsApp</button>
           </a>
         </div>
       )}

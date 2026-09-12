@@ -1,4 +1,5 @@
-/* Mobile-first base styles (Section 7) */
+/* Material-Logi redesign foundation (Site Ledger): semantic tokens, type scale,
+   focus, component contracts, reduced-motion default. 48px minimums kept. */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -6,16 +7,22 @@
 }
 
 :root {
-  --primary: #0ea5e9;
-  --primary-dark: #0284c7;
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --error: #ef4444;
-  --bg: #f8fafc;
+  --bg: #f1f5f9;
   --surface: #ffffff;
-  --text: #1e293b;
-  --text-muted: #64748b;
-  --border: #e2e8f0;
+  --text: #0f172a;
+  --text-muted: #475569;
+  --border: #cbd5e1;
+  --primary: #0369a1;
+  --primary-dark: #075985;
+  --focus: #0369a1;
+  --success: #15803d;
+  --warning: #92400e;
+  --warning-bg: #fef3c7;
+  --error: #b91c1c;
+  --blocked-bg: #fee2e2;
+  --blocked: #b91c1c;
+  --tbd: #475569;
+  --radius: 0.75rem;
 }
 
 html {
@@ -37,15 +44,49 @@ body {
   flex-direction: column;
 }
 
-/* Touch-friendly sizing (spec: 48x48px minimum on all interactive elements) */
+h1 { font-size: 1.75rem; font-weight: 700; line-height: 1.2; }
+h2 { font-size: 1.25rem; font-weight: 700; line-height: 1.3; }
+small, .small { font-size: 0.875rem; }
+.money { font-variant-numeric: tabular-nums; }
+
+/* Buttons: primary / secondary / danger-ghost. 48px minimums. */
 button, .btn {
   min-height: 48px;
   min-width: 48px;
   padding: 0.75rem 1rem;
   font-size: 1rem;
+  font-weight: 600;
   border-radius: 0.5rem;
   cursor: pointer;
   touch-action: manipulation;
+  border: 2px solid transparent;
+  background: var(--primary);
+  color: #ffffff;
+}
+
+button.secondary, .btn.secondary {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+button.danger-ghost, .btn.danger-ghost {
+  background: transparent;
+  color: var(--blocked);
+  border-color: var(--blocked);
+}
+
+button[disabled], .btn[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Visible keyboard focus everywhere. */
+button:focus-visible, .btn:focus-visible,
+input:focus-visible, select:focus-visible, textarea:focus-visible,
+a:focus-visible, [role="button"]:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
 }
 
 input, select, textarea {
@@ -55,9 +96,11 @@ input, select, textarea {
   padding: 0.75rem;
   border-radius: 0.5rem;
   border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
 }
 
-/* Bottom tab bar for mobile navigation (Section 7) */
+/* Bottom tab bar: text labels, active indicator, live count badge. */
 .tab-bar {
   position: fixed;
   bottom: 0;
@@ -67,7 +110,7 @@ input, select, textarea {
   justify-content: space-around;
   background: var(--surface);
   border-top: 1px solid var(--border);
-  padding: 0.5rem 0;
+  padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom));
   z-index: 100;
 }
 
@@ -79,14 +122,107 @@ input, select, textarea {
   gap: 0.25rem;
   background: none;
   border: none;
+  border-top: 3px solid transparent;
+  border-radius: 0;
   color: var(--text-muted);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
   min-height: 48px;
-  padding: 0.5rem;
+  padding: 0.5rem 0.25rem;
 }
 
 .tab-bar button.active {
   color: var(--primary);
+  border-top-color: var(--primary);
+}
+
+.tab-badge {
+  display: inline-block;
+  min-width: 1.5rem;
+  padding: 0 0.375rem;
+  border-radius: 999px;
+  background: var(--blocked);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+/* Banners: blocked / error / notice. Tint + words, never color alone. */
+.banner {
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  border: 2px solid transparent;
+  font-size: 1rem;
+}
+
+.banner.blocked, .banner.error {
+  background: var(--blocked-bg);
+  border-color: var(--blocked);
+  color: var(--blocked);
+}
+
+.banner.notice {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+/* Badges: severity / kind / status chips. Word always present. */
+.badge {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.badge.severity-high, .badge.status-blocked {
+  background: var(--blocked-bg);
+  border-color: var(--blocked);
+  color: var(--blocked);
+}
+
+.badge.severity-medium {
+  background: var(--warning-bg);
+  border-color: var(--warning);
+  color: var(--warning);
+}
+
+.badge.status-ready, .badge.status-saved {
+  border-color: var(--success);
+  color: var(--success);
+}
+
+/* Row list: one card per record, tappable value areas. */
+.rowlist {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rowlist .row {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+}
+
+.rowlist td[role="button"], .rowlist [role="button"].cell {
+  cursor: pointer;
+  min-height: 48px;
+  min-width: 48px;
+}
+
+/* TBD marker: bold, letterspaced, neutral — never a price color. */
+.tbd {
+  color: var(--tbd);
+  font-weight: 700;
+  letter-spacing: 0.05em;
 }
 
 /* Text links styled as tap targets */
@@ -112,12 +248,13 @@ a.btn {
   max-width: 1200px;
   margin: 0 auto;
   padding: 1rem;
-  padding-bottom: 5rem; /* Space for tab bar */
+  padding-bottom: 6rem; /* Space for tab bar */
 }
 
 .card {
   background: var(--surface);
-  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   padding: 1rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
@@ -126,3 +263,30 @@ a.btn {
 .text-success { color: var(--success); }
 .text-warning { color: var(--warning); }
 .text-error { color: var(--error); }
+
+/* Reduced motion: everything instant. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Motion answers only: where content went, what changed, is it working. */
+@keyframes panel-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.anim-panel {
+  animation: panel-in 150ms ease-out;
+}
+
+.banner {
+  animation: fade-in 120ms ease-out;
+}

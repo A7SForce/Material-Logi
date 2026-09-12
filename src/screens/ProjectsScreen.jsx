@@ -45,6 +45,7 @@ export default function ProjectsScreen({ onOpenProject }) {
   const [projects, setProjects] = useState([]);
   const [status, setStatus] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   const reload = async () => setProjects(await listProjects());
@@ -68,12 +69,15 @@ export default function ProjectsScreen({ onOpenProject }) {
     setBusy(true);
     setStatus(null);
     try {
+      setProgress('Parsing import…');
       const { format, parsed } = await parseImport(file, file.name);
       if (isEmptyImport(parsed)) {
         setStatus(friendlyImportError(new Error('no recognizable BOM content')));
         return;
       }
+      setProgress('Matching project…');
       const match = await matchProject(parsed.projectTitle);
+      setProgress('Saving…');
       if (match.action === 'match') {
         const result = await reimportProject(match.project.id, parsed, reimportDeps);
         setStatus(
@@ -99,6 +103,7 @@ export default function ProjectsScreen({ onOpenProject }) {
       setStatus(friendlyImportError(err));
     } finally {
       setBusy(false);
+      setProgress(null);
     }
   };
 
@@ -122,6 +127,12 @@ export default function ProjectsScreen({ onOpenProject }) {
         />
       </div>
 
+      {progress && (
+        <div className="card" role="status" aria-live="polite" style={{ marginBottom: '1rem' }}>
+          {progress}
+        </div>
+      )}
+
       {status && (
         <div className="card" style={{ marginBottom: '1rem' }}>
           {status}
@@ -134,10 +145,15 @@ export default function ProjectsScreen({ onOpenProject }) {
           <strong>{p.name}</strong>
           <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem' }}>
             <button onClick={() => onOpenProject(p.id)}>Open</button>
-            <button onClick={() => handleDelete(p.id, p.name)}>
+            <button className="secondary danger-ghost" onClick={() => handleDelete(p.id, p.name)}>
               {confirmDeleteId === p.id ? 'Tap again to confirm delete' : 'Delete'}
             </button>
           </div>
+          {confirmDeleteId === p.id && (
+            <p className="small" style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+              Deletes its BOM, confirmations and history. Shared suppliers stay.
+            </p>
+          )}
         </div>
       ))}
       {projects.length === 0 && (

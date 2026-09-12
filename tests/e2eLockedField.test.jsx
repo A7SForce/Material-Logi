@@ -41,7 +41,7 @@ const dropFileThroughUi = async (text, filename) => {
 
 const gypsumRow = async () => {
   const nameCell = await screen.findByText('Gypsum Board 9mm');
-  return nameCell.closest('tr');
+  return nameCell.closest('.row');
 };
 
 beforeEach(async () => {
@@ -56,7 +56,8 @@ describe('G3: locked field survives a UI re-import', () => {
     // 2. Edit through the real BOM UI.
     const bom = render(<BomScreen projectId={projectId} />);
     const row = await gypsumRow();
-    fireEvent.click(within(row).getByText('Edit Purchase qty'));
+    // Edit entry is the tappable value cell (single edit contract).
+    fireEvent.click(within(row).getByText('12'));
     const panel = screen.getByText('Edit purchaseQty (will lock the field)').closest('.card');
     fireEvent.change(panel.querySelector('input'), { target: { value: '99' } });
     fireEvent.click(screen.getByText('Save + lock'));

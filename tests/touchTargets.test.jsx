@@ -46,7 +46,7 @@ document.head.appendChild(styleTag);
 const px = (v) => Number(String(v || '').replace('px', ''));
 
 const assertTapTargets = (container) => {
-  const els = container.querySelectorAll('button, input, select, textarea, a.btn');
+  const els = container.querySelectorAll('button, input, select, textarea, a.btn, [role="button"]');
   expect(els.length).toBeGreaterThan(0);
   for (const el of els) {
     const cs = getComputedStyle(el);
@@ -78,6 +78,12 @@ describe('G1: stylesheet declares 48px minimums', () => {
     }
     expect(cssText).not.toMatch(/\.tab-bar button\s*\{[^}]*min-height:\s*auto/);
   });
+
+  it('focus visibility and reduced-motion guard exist', () => {
+    expect(cssText).toMatch(/:focus-visible/);
+    expect(cssText).toMatch(/outline:\s*3px solid/);
+    expect(cssText).toMatch(/prefers-reduced-motion:\s*reduce/);
+  });
 });
 
 describe('G1: every rendered interactive element meets 48px', () => {
@@ -86,19 +92,19 @@ describe('G1: every rendered interactive element meets 48px', () => {
 
     const p = render(<ProjectsScreen onOpenProject={() => {}} />);
     await p.findByText('Open'); // project list loads async from Dexie
-    expect(p.container.querySelectorAll('button, input, select, textarea, a.btn').length).toBeGreaterThanOrEqual(2);
+    expect(p.container.querySelectorAll('button, input, select, textarea, a.btn, [role="button"]').length).toBeGreaterThanOrEqual(2);
     assertTapTargets(p.container);
     p.unmount();
 
-    const d = render(<DashboardScreen projectId={project.id} />);
+    const d = render(<DashboardScreen projectId={project.id} onGoConfirm={() => {}} />);
     await d.findByText('TOUCH PROBE');
-    // Dashboard currently has no tap targets — vacuously compliant, asserted as zero.
-    expect(d.container.querySelectorAll('button, input, select, textarea, a.btn').length).toBe(0);
+    assertTapTargets(d.container); // blocked badge's Go-to-Confirm button included
     d.unmount();
 
     const b = render(<BomScreen projectId={project.id} />);
     await b.findByText('Gypsum Board 9mm');
-    expect(b.container.querySelectorAll('button').length).toBeGreaterThanOrEqual(2);
+    // One row-list row, two keyboard-operable value cells (no per-field buttons).
+    expect(b.container.querySelectorAll('[role="button"]').length).toBeGreaterThanOrEqual(2);
     assertTapTargets(b.container);
     b.unmount();
   });
@@ -128,7 +134,7 @@ describe('G1: every rendered interactive element meets 48px', () => {
     await seedStandardProject();
     const app = render(<App />);
     fireEvent.click(await app.findByText('Open')); // enter the project context
-    for (const label of ['📁 Projects', '📊 Dashboard', '📋 BOM', '✅ Confirm', '🏪 Suppliers', '📄 PO']) {
+    for (const label of ['Projects', 'Dashboard', 'BOM', 'Confirm', 'Suppliers', 'PO']) {
       await app.findByText(label, { selector: 'button' });
     }
     const tabs = app.container.querySelectorAll('.tab-bar button');

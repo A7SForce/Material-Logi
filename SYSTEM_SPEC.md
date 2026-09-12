@@ -103,7 +103,7 @@ Mobile-first: bottom-30% primary actions, deterministic progress text, specific 
 | `POGenerator` + WhatsApp | `src/screens/PoScreen.jsx` (Generate PO → jspdf bytes download; wa.me link derived from PDF state, gate unchanged) + `src/logic/poDocument.js` (lines/TBD totals/PDF/link builders) | ✅ Done (D6 closed 2026-09-11) |
 | PO gate rule | `src/screens/poGate.js` (`getPoGate` / `resolveTabRequest`, pure + tested) | ✅ Done |
 | App shell / tab bar | `src/App.jsx` (Projects entry → 5-tab project context) | ✅ Done |
-| Tests | `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport}.test.{js,jsx}` (34/34 pass) + `tests/fixtures/` | ✅ Done |
+| Tests | `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport,redesignUi,approvePending}.test.{js,jsx}` (43/43 pass) + `tests/fixtures/` | ✅ Done |
 
 ## Annex B — Conformance Deltas (decisions, do not revert without a new entry here)
 
@@ -160,7 +160,7 @@ Mobile-first: bottom-30% primary actions, deterministic progress text, specific 
 - **D13 — Project deletion (Task I, new scope).** Two-tap Delete on `ProjectsScreen` over
   cascading `deleteProject` (own rows go; shared `GlobalSupplier` records survive).
 
-## Annex C — Agent Work Queue (ordered; Phase 2–4 done, verified 34/34 + prod build green)
+## Annex C — Agent Work Queue (ordered; pipeline + redesign done, verified 43/43 + prod build green)
 
 1. **~~Delete dead v1 files~~ DONE 2026-09-11 (Task B):** `src/utils/excelParser/dsgB.js`,
    `src/data/structuralKits.js`, `src/utils/coverageRules.js` deleted (empty parent dirs removed).
@@ -172,6 +172,9 @@ Mobile-first: bottom-30% primary actions, deterministic progress text, specific 
 4. **Phase 5 audit:** D8 48px ✅ (automated proxy; real feel in G4) · single-source review ✅
    (D10) · UI-driven locked-field re-import ✅ (`tests/e2eLockedField.test.jsx`) ·
    **OPEN: G4 one-thumb physical-device test — human-run, checklist in BUILD_PROGRESS.**
+5. **~~Redesign~~ DONE 2026-09-11:** full pipeline in `docs/redesign/` (handoffs 01–07,
+   summary, decision register, QA evidence, before/after shots). No logic/schema/gate
+   changes; two evidence-found fixes (banner race, WhatsApp copy).
 5. **Adopt Zustand only if** a screen starts prop-drilling (D7); do not pre-empt.
 
 ## Annex D — Sources & Supersession

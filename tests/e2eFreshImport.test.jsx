@@ -52,7 +52,7 @@ describe('Task J: fresh project, first import, exact counts, edit locks', () => 
 
     // Edit afterward through the UI value cell: persists and locks.
     const bom = render(<BomScreen projectId={projectId} />);
-    const row = (await screen.findByText('Gypsum Board 9mm')).closest('tr');
+    const row = (await screen.findByText('Gypsum Board 9mm')).closest('.row');
     const qtyCell = within(row).getByText('12');
     fireEvent.click(qtyCell);
     const panel = screen.getByText('Edit purchaseQty (will lock the field)').closest('.card');
