@@ -221,6 +221,7 @@ Agent 6/7 BOM producers, multi-user backend. (PO PDF + WhatsApp landed in Task F
 - Redeploy 2026-09-11 (H1/H2/H3/I/J): 34/34 green, build green, pushed (05af8cd) + redeployed production Ready.
 - Redeploy 2026-09-12 (redesign): 43/43 green, build green, pushed + redeployed production Ready (aliases repointed).
 - Redeploy 2026-09-14 (canonical-name xlsx): 44/44 green, pushed + redeployed production Ready.
+- Redeploy 2026-09-14 (L/M): 53/53 green, build green, pushed (2944760) + redeployed production Ready.
 
 ## Run
 `npm install --legacy-peer-deps` · `npm run dev` · `npx vitest run` · `npx vite build`
