@@ -69,7 +69,10 @@ const parseBomSheet = (rows) => {
   const header = rows[hIdx];
   const idx = {
     category: colFind(header, [/^system/, /^category/]),
-    item: colFind(header, [/^item$/]),
+    // Agent exports may use the more descriptive "Item / Canonical Name".
+    // Keep Item as the leading, unambiguous signal without mistaking an ID
+    // column for the BOM item name.
+    item: colFind(header, [/^item\b/]),
     spec: colFind(header, [/\bspec\b/]),
     unit: colFind(header, [/^unit$/]),
     netQty: colFind(header, [/net qty/]),
@@ -228,11 +231,22 @@ export const parseWorkbook = (workbook) => {
     const role = SHEET_ROLE(name);
     const rows = sheetToRows(sheets[name]);
     if (rows.length === 0) continue;
-    // Capture project title hint from first rows of master/dashboard sheets
-    if ((role === 'bom' || role === 'dashboard') && !titleHint) {
+    // Capture project title hint from first rows of master/dashboard sheets.
+    // Standard agent exports use "Project: …"; some valid exports put the
+    // title directly in "MASTER / RECONCILIATION BOM — <project>" instead.
+    if (role === 'bom' || role === 'dashboard') {
       const top = rows.slice(0, 5).map((r) => r.join(' ')).join(' ');
       const m = top.match(/project\s*:\s*([^\n|]+)/i) || top.match(/surau\s+darul\s+dakwah[^\n|]*/i);
-      if (m) titleHint = m[1] || m[0];
+      // The Master BOM is more canonical than a dashboard summary, which can
+      // omit quotation/reference text needed to distinguish projects. Read
+      // its title row directly before considering a generic text match.
+      if (role === 'bom') {
+        const masterTitle = rows.slice(0, 5)
+          .map((r) => r.join(' ').trim())
+          .find((text) => /master|reconciliation/.test(H(text)) && /bom/.test(H(text)));
+        if (masterTitle) titleHint = masterTitle;
+        else if (m) titleHint = m[1] || m[0];
+      } else if (m && !titleHint) titleHint = m[1] || m[0];
     }
     if (role === 'bom') bomItems = bomItems.concat(parseBomSheet(rows));
     else if (role === 'shortage') shortageConfirmItems = shortageConfirmItems.concat(parseShortageSheet(rows));

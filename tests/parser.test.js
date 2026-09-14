@@ -18,8 +18,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it, expect } from 'vitest';
+import * as XLSX from 'xlsx';
 import { parseMarkdown } from '../src/utils/importParser/mdReader.js';
-import { parseXlsx } from '../src/utils/importParser/xlsxReader.js';
+import { parseXlsx, parseWorkbook } from '../src/utils/importParser/xlsxReader.js';
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const mdText = fs.readFileSync(path.join(dir, 'fixtures/Qwen_markdown_20260910_k171vvnlq.md'), 'utf8');
@@ -89,5 +90,38 @@ describe('parser acceptance: pandas-export md variant (title rows above header)'
     expect(p.shortageConfirmItems[0]).toMatchObject({ severity: 'MEDIUM', owner: 'Purchasing' });
     // Note/total rows must not leak in as items.
     expect(p.bomItems.some((r) => /MATERIAL TOTAL|Labour, transport/i.test(r.item || ''))).toBe(false);
+  });
+});
+
+describe('parser acceptance: canonical-name xlsx BOM header', () => {
+  it('imports a valid Master Reconciliation BOM whose item column is named Item / Canonical Name', () => {
+    const book = XLSX.utils.book_new();
+    const dashboard = XLSX.utils.aoa_to_sheet([
+      ['ORDER-READY DASHBOARD'],
+      ['Project: KEDIAMAN PUAN HASHIMA, PUNCAK ALAM, SELANGOR | Q260163'],
+    ]);
+    const sheet = XLSX.utils.aoa_to_sheet([
+      ['MASTER / RECONCILIATION BOM — KEDIAMAN PUAN HASHIMA (Q260163)'],
+      ['Geometry Source of Truth: Detail Drawing'],
+      [],
+      ['ID', 'System / Category', 'Item / Canonical Name', 'Spec / Colour Code', 'Unit', 'Net Qty', 'Wastage', 'Purchase Qty', 'Purchase Pack', 'Basis / Method', 'Confidence', 'Notes / Flags'],
+      ['A1-01', 'Custom / CNC', 'PVC Decorative Panel', '10 mm THK PVC', 'pcs', 3, 0, 3, '3 panels', 'drawing count', 'High', 'Long lead'],
+    ]);
+    // The real export places its dashboard before the Master BOM. The Master
+    // title must win because it retains the quotation reference.
+    XLSX.utils.book_append_sheet(book, dashboard, 'H. Order-Ready Dashboard');
+    XLSX.utils.book_append_sheet(book, sheet, 'A. Master Reconciliation BOM');
+
+    expect(parseWorkbook(book)).toMatchObject({
+      projectTitle: 'KEDIAMAN PUAN HASHIMA (Q260163)',
+      bomItems: [{
+        category: 'Custom / CNC',
+        item: 'PVC Decorative Panel',
+        spec: '10 mm THK PVC',
+        unit: 'pcs',
+        netQty: 3,
+        purchaseQty: 3,
+      }],
+    });
   });
 });
