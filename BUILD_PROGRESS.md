@@ -4,7 +4,7 @@
 
 Pipeline: `logistics_helper_v3_build_pipeline.md` (5 agents). Status: **all 5 agents done, verified**.
 Follow-ups Task A (same-run fixtures) + Task B (dead-file deletion) + Tasks C/D (README count, supplier browser) + Tasks E/F (dedupe key, PO PDF) + Task G (Phase 5 audit): **done, verified** (G4 physical-device test is human-run — checklist below).
-Verification: `npx vitest run` → **15 files, 43 tests, all pass**. `npx vite build` → **green**.
+Verification: `npx vitest run` → **15 files, 44 tests, all pass**. `npx vite build` → **green**.
 
 ## Agent 1 — Parser ✅ (Task A: deep equality, 2026-09-11)
 Files: `src/utils/importParser/{detectFormat,mdReader,xlsxReader,normalize,index}.js`
@@ -51,7 +51,7 @@ and tested); `PoScreen` also re-checks the gate itself and renders a blocked pan
 The old DSG-B-only flow in `App.jsx` was replaced; its dead utils are now deleted (Task B).
 
 ## Agent 5 — QA ✅
-Files: `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport,redesignUi,approvePending}.test.{js,jsx}` (Vitest). 43/43 pass.
+Files: `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport,redesignUi,approvePending}.test.{js,jsx}` (Vitest). 44/44 pass.
 `poGate.test.js` seeds the **real MD sample** (52 lines, 6 open confirmations) and asserts
 PO-request → Confirm redirect, then gate opens after resolving all.
 Test-count note: 14 → 11 was the Task A rewrite (7 shape-only parser tests consolidated into
@@ -170,6 +170,12 @@ approvePending 3, touchTargets +1). Before/after shots (8+8+2) via re-runnable
 G4 physical-device run remains human-open. Primary color moved #0284c7 → #0369a1 on
 computed contrast evidence (4.10 fail → 5.93 pass).
 
+## Parser — canonical-name headers ✅ (2026-09-14)
+`xlsxReader.js` accepts Master BOM item columns named "Item / Canonical Name" (leading-word
+match, no ID-column confusion) and prefers the Master title row over the dashboard summary
+for the project title (keeps quotation refs like Q260163). Synthetic workbook test in
+`parser.test.js`; xlsx↔md deep-equality still holds.
+
 ## Environment fixes (pre-existing, not pipeline scope)
 - `npm install` fails with arborist `edgesOut` on this machine (vitest peer graph) → use
   `npm install --legacy-peer-deps`. Generated `package-lock.json` is committed.
@@ -192,6 +198,7 @@ Agent 6/7 BOM producers, multi-user backend. (PO PDF + WhatsApp landed in Task F
 - Redeploy 2026-09-11 (md rework): 27/27 green, build green, pushed + redeployed.
 - Redeploy 2026-09-11 (H1/H2/H3/I/J): 34/34 green, build green, pushed (05af8cd) + redeployed production Ready.
 - Redeploy 2026-09-12 (redesign): 43/43 green, build green, pushed + redeployed production Ready (aliases repointed).
+- Redeploy 2026-09-14 (canonical-name xlsx): 44/44 green, pushed + redeployed production Ready.
 
 ## Run
 `npm install --legacy-peer-deps` · `npm run dev` · `npx vitest run` · `npx vite build`
