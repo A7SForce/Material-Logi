@@ -2,9 +2,13 @@
  * schema.js — Agent 2: table definitions (config, not code).
  *
  * Project           { id, name, location, createdAt }
+ *   + client: string | null (Task L/M prereq — manually entered, optional,
+ *     never inferred from imports; blank means unset)
  * BomItem           { id, projectId, item, spec, category, netQty, wastagePct,
  *                     purchaseQty, unitCost, estTotal, basis, confidence, notes,
  *                     lockedFields: string[] }
+ *   + displayOrder: number | null (Task L — cosmetic presentation order only;
+ *     never read by merge/itemMatcher; null = legacy row, sorts last)
  * ShortageConfirmItem { id, projectId, severity, issue, missingInfo,
  *                       confirmationRequired, owner, resolved: bool,
  *                       kind: "agent_question" | "new_item_pending" | "removed_item_pending" }
@@ -45,6 +49,8 @@ export const defaultBomItem = (partial = {}) => ({
   confidence: partial.confidence ?? null,
   notes: partial.notes ?? null,
   lockedFields: Array.isArray(partial.lockedFields) ? [...partial.lockedFields] : [],
+  // Cosmetic presentation order only. Never read by merge/itemMatcher (see D14).
+  displayOrder: typeof partial.displayOrder === 'number' ? partial.displayOrder : null,
 });
 
 /** Fresh defaults for a new ShortageConfirmItem row. */

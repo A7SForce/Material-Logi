@@ -55,6 +55,34 @@ export const unlockField = async (id, field) => {
 
 export const deleteBomItem = (id) => db.bomItems.delete(id);
 
+/**
+ * Persist a full presentation order: orderedIds[0] becomes displayOrder 0, etc.
+ * Cosmetic only — never consulted by merge/itemMatcher. Caller contract: ids are
+ * this project's rows in the desired top-to-bottom order. Unknown ids throw.
+ */
+export const reorderBomItems = async (projectId, orderedIds) => {
+  await db.transaction('rw', db.bomItems, async () => {
+    let i = 0;
+    for (const id of orderedIds) {
+      const row = await db.bomItems.get(id);
+      if (!row || row.projectId !== projectId) {
+        throw new Error(`reorderBomItems: unknown item ${id} for project ${projectId}`);
+      }
+      await db.bomItems.update(id, { displayOrder: i++ });
+    }
+  });
+  return listBomItems(projectId);
+};
+
+/** Highest displayOrder in a project (-1 when empty/all-legacy). */
+export const maxDisplayOrder = async (projectId) => {
+  const rows = await listBomItems(projectId);
+  return rows.reduce(
+    (m, r) => Math.max(m, typeof r.displayOrder === 'number' ? r.displayOrder : -1),
+    -1
+  );
+};
+
 export default {
   createBomItem,
   bulkCreateBomItems,
@@ -64,4 +92,6 @@ export default {
   lockField,
   unlockField,
   deleteBomItem,
+  reorderBomItems,
+  maxDisplayOrder,
 };

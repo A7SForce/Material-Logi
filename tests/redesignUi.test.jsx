@@ -84,7 +84,7 @@ describe('redesign contracts', () => {
     ui.unmount();
   });
 
-  it('delete arms with consequence copy, second tap removes the card', async () => {    const project = await createProject({ name: 'DELETE PROBE' });
+    it('delete arms with consequence copy, second tap removes the card', async () => {    const project = await createProject({ name: 'DELETE PROBE' });
     const ui = render(<ProjectsScreen onOpenProject={() => {}} />);
     await ui.findByText('DELETE PROBE');
     fireEvent.click(ui.getByText('Delete'));
@@ -93,6 +93,20 @@ describe('redesign contracts', () => {
     fireEvent.click(ui.getByText('Tap again to confirm delete'));
     await ui.findByText(/Deleted "DELETE PROBE"/);
     expect(ui.queryByText('DELETE PROBE')).toBeNull();
+    ui.unmount();
+  });
+
+  it('client edit on Dashboard saves and shows (manual, optional, never inferred)', async () => {
+    const { getProject } = await import('../src/data/projectRepo.js');
+    const project = await createProject({ name: 'CLIENT PROBE' });
+    const ui = render(<DashboardScreen projectId={project.id} onGoConfirm={() => {}} />);
+    await ui.findByText('CLIENT PROBE');
+    ui.getByText('—'); // unset client renders graceful blank
+    fireEvent.change(ui.getByLabelText(/Client/), { target: { value: 'TUAN DIN' } });
+    fireEvent.click(ui.getByText('Save client'));
+    await ui.findByText('Saved.');
+    ui.getByText('TUAN DIN');
+    expect((await getProject(project.id)).client).toBe('TUAN DIN');
     ui.unmount();
   });
 

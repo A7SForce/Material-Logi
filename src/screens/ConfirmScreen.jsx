@@ -15,6 +15,7 @@ const approveDeps = {
   createBomItem: bomRepo.createBomItem,
   listBomItems: bomRepo.listBomItems,
   deleteBomItem: bomRepo.deleteBomItem,
+  maxDisplayOrder: bomRepo.maxDisplayOrder,
 };
 
 const GROUPS = [

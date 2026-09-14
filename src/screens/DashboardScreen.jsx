@@ -4,22 +4,16 @@
  * plain sentences (never storage field names). Wiring only.
  */
 import React, { useEffect, useState } from 'react';
-import { getProject } from '../data/projectRepo.js';
+import { getProject, updateProject } from '../data/projectRepo.js';
 import { listBomItems } from '../data/bomRepo.js';
 import { countUnresolved } from '../data/shortageRepo.js';
 import { listProjectSuppliers } from '../data/supplierRepo.js';
 import { listChangeLog } from '../data/changeLogRepo.js';
-import { formatCurrency } from '../utils/helpers.js';
-
-const shortDate = (iso) => {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-};
+import { formatCurrency, formatShortDate } from '../utils/helpers.js';
 
 /** Storage row -> plain site-diary sentence. No field names leak to the screen. */
 export const changeSentence = (c) => {
-  const when = shortDate(c.timestamp);
+  const when = formatShortDate(c.timestamp);
   const who = c.actor === 'supervisor' ? 'Supervisor' : 'Agent';
   if (c.field === 'import_note') return `${who} note · ${when}: ${c.newValue}`;
   return `${who} · ${when}: ${c.field}: ${String(c.oldValue)} → ${String(c.newValue)}`;
@@ -29,26 +23,35 @@ export default function DashboardScreen({ projectId, onGoConfirm }) {
   const [project, setProject] = useState(null);
   const [stats, setStats] = useState({ lines: 0, total: 0, open: 0, suppliers: 0 });
   const [recent, setRecent] = useState([]);
+  const [clientDraft, setClientDraft] = useState('');
+  const [clientSaved, setClientSaved] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      const [p, items, open, links, log] = await Promise.all([
-        getProject(projectId),
-        listBomItems(projectId),
-        countUnresolved(projectId),
-        listProjectSuppliers(projectId),
-        listChangeLog(projectId),
-      ]);
-      setProject(p);
-      setStats({
-        lines: items.length,
-        total: items.reduce((s, i) => s + Number(i.estTotal || 0), 0),
-        open,
-        suppliers: links.length,
-      });
-      setRecent(log.slice(-5).reverse());
-    })();
-  }, [projectId]);
+  const reload = async () => {
+    const [p, items, open, links, log] = await Promise.all([
+      getProject(projectId),
+      listBomItems(projectId),
+      countUnresolved(projectId),
+      listProjectSuppliers(projectId),
+      listChangeLog(projectId),
+    ]);
+    setProject(p);
+    if (p) setClientDraft(p.client || '');
+    setStats({
+      lines: items.length,
+      total: items.reduce((s, i) => s + Number(i.estTotal || 0), 0),
+      open,
+      suppliers: links.length,
+    });
+    setRecent(log.slice(-5).reverse());
+  };
+
+  useEffect(() => { reload(); }, [projectId]);
+
+  const saveClient = async () => {
+    await updateProject(projectId, { client: clientDraft.trim() ? clientDraft.trim() : null });
+    setClientSaved(true);
+    await reload();
+  };
 
   if (!project) return <div className="container"><p>Loading project…</p></div>;
 
@@ -72,6 +75,19 @@ export default function DashboardScreen({ projectId, onGoConfirm }) {
         <div><strong>Est. total:</strong> <span className="money">{formatCurrency(stats.total)}</span></div>
         <div><strong>Open confirmations:</strong> {stats.open}</div>
         <div><strong>Linked suppliers:</strong> {stats.suppliers}</div>
+        <div><strong>Client:</strong> {project.client || '—'}</div>
+        <div style={{ marginTop: '0.5rem' }}>
+          <label className="small" htmlFor="client-input">Client (optional, manual entry)</label>
+          <input
+            id="client-input"
+            value={clientDraft}
+            onChange={(e) => { setClientDraft(e.target.value); setClientSaved(false); }}
+            placeholder="e.g. TUAN DIN"
+            style={{ width: '100%', marginTop: '0.25rem' }}
+          />
+          <button onClick={saveClient} style={{ marginTop: '0.5rem' }}>Save client</button>
+          {clientSaved && <span role="status" style={{ marginLeft: '0.5rem' }}>Saved.</span>}
+        </div>
       </div>
       <h2>Recent changes</h2>
       {recent.length === 0 && <p style={{ color: 'var(--text-muted)' }}>No changes logged yet.</p>}

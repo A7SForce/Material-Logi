@@ -20,7 +20,12 @@ export const seedProjectFromImport = async (projectId, parsedImport, deps) => {
   } = deps;
 
   const bomRows = await bulkCreateBomItems(
-    parsedImport.bomItems.map((b) => ({ ...b, projectId }))
+    parsedImport.bomItems.map((b, i) => ({
+      ...b,
+      projectId,
+      // Import order is the initial presentation order.
+      displayOrder: typeof b.displayOrder === 'number' ? b.displayOrder : i,
+    }))
   );
 
   const shortageRows = await bulkCreateShortageItems(

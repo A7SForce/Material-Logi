@@ -4,7 +4,7 @@
 
 Pipeline: `logistics_helper_v3_build_pipeline.md` (5 agents). Status: **all 5 agents done, verified**.
 Follow-ups Task A (same-run fixtures) + Task B (dead-file deletion) + Tasks C/D (README count, supplier browser) + Tasks E/F (dedupe key, PO PDF) + Task G (Phase 5 audit): **done, verified** (G4 physical-device test is human-run — checklist below).
-Verification: `npx vitest run` → **15 files, 44 tests, all pass**. `npx vite build` → **green**.
+Verification: `npx vitest run` → **18 files, 53 tests, all pass**. `npx vite build` → **green**.
 
 ## Agent 1 — Parser ✅ (Task A: deep equality, 2026-09-11)
 Files: `src/utils/importParser/{detectFormat,mdReader,xlsxReader,normalize,index}.js`
@@ -51,7 +51,7 @@ and tested); `PoScreen` also re-checks the gate itself and renders a blocked pan
 The old DSG-B-only flow in `App.jsx` was replaced; its dead utils are now deleted (Task B).
 
 ## Agent 5 — QA ✅
-Files: `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport,redesignUi,approvePending}.test.{js,jsx}` (Vitest). 44/44 pass.
+Files: `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport,redesignUi,approvePending,bomMigration,bomReorder,bomExportPdf}.test.{js,jsx}` (Vitest). 53/53 pass.
 `poGate.test.js` seeds the **real MD sample** (52 lines, 6 open confirmations) and asserts
 PO-request → Confirm redirect, then gate opens after resolving all.
 Test-count note: 14 → 11 was the Task A rewrite (7 shape-only parser tests consolidated into
@@ -70,7 +70,7 @@ Phase 5 "zero Kill List items" audit now passes on presence (remaining Kill List
 never introduced).
 
 ## Task C — README count ✅ (2026-09-11)
-One line: `npx vitest run` comment 14/14 → 11/11 → 13/13 (Task D) → 18/18 (Tasks E/F) → 25 (Task G) → 27 (md rework) → 34 (H-tasks) → 43 (redesign).
+One line: `npx vitest run` comment 14/14 → 11/11 → 13/13 (Task D) → 18/18 (Tasks E/F) → 25 (Task G) → 27 (md rework) → 34 (H-tasks) → 43 (redesign) → 44 (canonical-name) → 53 (L/M).
 
 ## Task D — Global supplier browser ✅ (2026-09-11, closes Delta D5)- New `src/logic/supplierLinking.js`: single home of the dedupe-by-normalized-businessName
   rule (`linkSupplierEntry`: find-or-create + link). `seedProject.js` refactored onto it —
@@ -175,6 +175,28 @@ computed contrast evidence (4.10 fail → 5.93 pass).
 match, no ID-column confusion) and prefers the Master title row over the dashboard summary
 for the project title (keeps quotation refs like Q260163). Synthetic workbook test in
 `parser.test.js`; xlsx↔md deep-equality still holds.
+
+## Task L — Line numbering + reorder ✅ (2026-09-14, before M per ticket)
+`BomItem.displayOrder` (cosmetic-only; absent from MERGE_FIELDS so merge/itemMatcher can't
+see it) + `Project.client` (manual, optional, Dashboard edit, never inferred). Seed assigns
+import order; approvals append at max+1; `bomRepo.reorderBomItems` persists full orderings
+in one transaction; legacy rows backfilled once by a Dexie v2 upgrade (genuine v1 DB test).
+`BomScreen` shows `#` badges, drag-to-reorder (desktop) + ▲▼ buttons (touch), Export BOM
+button placed top-of-screen. Acceptance: move-3-to-1 persists across reload; re-import
+leaves order + locks untouched with zero conflicts. `tests/bomMigration` (1),
+`tests/bomReorder` (5 incl. UI buttons). One self-caught slip: deleted shared `clamp`
+helper while adding the date formatter — restored (zero usages, but no silent deletions).
+
+## Task M — Export BOM PDF ✅ (2026-09-14)
+New `src/logic/bomExportDocument.js` only — `poDocument.js`/`poGate.js` untouched. Header
+block (title, project + location, client or graceful blank, quotation date from latest
+import note, Agent 6/7 source default, current generation date), 52 rows in displayOrder,
+category roll-up (line counts cover all rows, subtotals priced-only), grand total.
+Missing price → TBD row, excluded from both subtotal and grand total. `tests/bomExportPdf`
+(3 tests on the real fixture: header/blank-client, independent-arithmetic subtotals +
+50507 grand, TBD exclusion 50507−336=50171 with byte assertions). Client UI covered in
+`redesignUi` (+1). Caught by its own test: my hand arithmetic wrote 50371 — the suite
+does its job.
 
 ## Environment fixes (pre-existing, not pipeline scope)
 - `npm install` fails with arborist `edgesOut` on this machine (vitest peer graph) → use

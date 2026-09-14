@@ -11,7 +11,7 @@
 import { itemKey } from './itemMatcher.js';
 
 export const approvePendingItem = async (shortageId, projectId, deps) => {
-  const { getShortageItem, resolveShortageItem, createBomItem, listBomItems, deleteBomItem } = deps;
+  const { getShortageItem, resolveShortageItem, createBomItem, listBomItems, deleteBomItem, maxDisplayOrder } = deps;
   const row = await getShortageItem(shortageId);
   if (!row) throw new Error(`ShortageConfirmItem not found: ${shortageId}`);
 
@@ -24,7 +24,11 @@ export const approvePendingItem = async (shortageId, projectId, deps) => {
     );
     let bomId = null;
     if (!already) {
-      const created = await createBomItem({ ...snap, projectId, lockedFields: [] });
+      // Appended at the end; the supervisor drags it into place afterward.
+      const max = typeof maxDisplayOrder === 'function'
+        ? await maxDisplayOrder(projectId)
+        : existing.reduce((m, b) => Math.max(m, typeof b.displayOrder === 'number' ? b.displayOrder : -1), -1);
+      const created = await createBomItem({ ...snap, projectId, lockedFields: [], displayOrder: max + 1 });
       bomId = created.id;
     }
     await resolveShortageItem(shortageId);

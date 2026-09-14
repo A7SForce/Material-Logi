@@ -31,6 +31,13 @@ export const debounce = (fn, delay) => {
 /** Clamp a number between min and max */
 export const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
 
+/** Short human date for display ("12 Sept 2026"); '' on invalid input. */
+export const formatShortDate = (iso) => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+};
+
 /** Round to specified decimal places */
 export const roundTo = (num, decimals = 2) => {
     const factor = Math.pow(10, decimals);

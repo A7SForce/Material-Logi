@@ -4,11 +4,12 @@
 import db from './db.js';
 import { generateId } from '../utils/helpers.js';
 
-export const createProject = async ({ name, location = null }) => {
+export const createProject = async ({ name, location = null, client = null }) => {
   const row = {
     id: generateId(),
     name,
     location,
+    client: client && String(client).trim() ? String(client).trim() : null,
     createdAt: new Date().toISOString(),
   };
   await db.projects.add(row);
