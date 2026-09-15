@@ -253,6 +253,7 @@ Agent 6/7 BOM producers, multi-user backend. (PO PDF + WhatsApp landed in Task F
 - Redeploy 2026-09-14 (canonical-name xlsx): 44/44 green, pushed + redeployed production Ready.
 - Redeploy 2026-09-14 (L/M): 53/53 green, build green, pushed (2944760) + redeployed production Ready.
 - Redeploy 2026-09-15 (fast ordering): 83/83 green, build green, pushed (ed8ba9d) + redeployed production Ready (first attempt hit a transient Vercel fetch error; retry clean).
+- Redeploy 2026-09-15 (Task N): 85/85 green, build green, pushed + redeployed production Ready.
 - Infra note 2026-09-15: full-suite default run once OOM-killed workers mid-run (environment,
   not code — 66 counted, 3 fallout failures). Re-ran with `npx vitest run --maxWorkers=2`:
   24 files, 85/85 green. Use constrained workers on small machines.
