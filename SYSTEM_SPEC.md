@@ -103,7 +103,7 @@ Mobile-first: bottom-30% primary actions, deterministic progress text, specific 
 | `POGenerator` + WhatsApp | `src/screens/PoScreen.jsx` (Generate PO → jspdf bytes download; wa.me link derived from PDF state, gate unchanged) + `src/logic/poDocument.js` (lines/TBD totals/PDF/link builders) | ✅ Done (D6 closed 2026-09-11) |
 | PO gate rule | `src/screens/poGate.js` (`getPoGate` / `resolveTabRequest`, pure + tested) | ✅ Done |
 | App shell / tab bar | `src/App.jsx` (Projects entry → 5-tab project context) | ✅ Done |
-| Tests | `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport,redesignUi,approvePending,bomMigration,bomReorder,bomExportPdf,itemSupplierPresets,quickOrderGate,quickOrderMessage,quickOrderPhoneNormalize,quickOrderUi}.test.{js,jsx}` (83/83 pass) + `tests/fixtures/` | ✅ Done |
+| Tests | `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport,redesignUi,approvePending,bomMigration,bomReorder,bomExportPdf,itemSupplierPresets,quickOrderGate,quickOrderMessage,quickOrderPhoneNormalize,quickOrderUi,projectMatcher}.test.{js,jsx}` (85/85 pass) + `tests/fixtures/` | ✅ Done |
 
 ## Annex B — Conformance Deltas (decisions, do not revert without a new entry here)
 
@@ -172,8 +172,13 @@ Mobile-first: bottom-30% primary actions, deterministic progress text, specific 
   `pack` also merge as descriptive fields (locks still respected). `byDisplayOrder` factored
   into `utils/helpers.js` (was triplicated) and reused for message line order, so message
   numbering always matches the on-screen BOM.
+- **D16 — Inverted-order title fix (Task N).** The master-preference rule picked a title
+  row it couldn't parse (last dash-chunk → "V2 COST SHEET"). Names now come from the chunk
+  after the BOM marker; trailing parenthetical refs stripped everywhere including
+  `normalizeTitle`, so re-quotes match. Earlier ref-bearing expectation updated (documented
+  reversal: refs aren't stable identifiers). Real inverted-order file staged as a fixture.
 
-## Annex C — Agent Work Queue (ordered; pipeline + redesign + L/M + fast ordering done, verified 83/83 + prod build green)
+## Annex C — Agent Work Queue (ordered; pipeline + redesign + L/M + fast ordering + Task N done, verified 85/85 + prod build green)
 
 1. **~~Delete dead v1 files~~ DONE 2026-09-11 (Task B):** `src/utils/excelParser/dsgB.js`,
    `src/data/structuralKits.js`, `src/utils/coverageRules.js` deleted (empty parent dirs removed).
@@ -202,6 +207,8 @@ Mobile-first: bottom-30% primary actions, deterministic progress text, specific 
   Plus `tests/fixtures/Surau_Darul_Dakwah_BOM.md` — pandas-export variant of the same project
   (title/metadata rows above header, 6 sections; 52/6 parsed, regression-locked, not
   deep-equal to Qwen by wording).
+  Plus `tests/fixtures/Artseven_BOM_Q260163_Kediaman_Puan_Hashima_v2.xlsx` — real
+  inverted-order file (dashboard first, comma-less Master title; 11/4/7/7, title exact).
 
 ## Annex E — Fast Supplier Ordering (Presets + One-Tap WhatsApp)
 

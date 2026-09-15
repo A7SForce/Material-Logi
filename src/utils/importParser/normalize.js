@@ -100,24 +100,37 @@ export const normalizeChangeLog = (raw) => {
 };
 
 /** Extract "SURAU DARUL DAKWAH" from headers like "MASTER / RECONCILIATION BOM — SURAU DARUL DAKWAH".
- *  Canonical form: location tail after the first comma is stripped
- *  ("SURAU DARUL DAKWAH, BETONG, SARAWAK" -> "SURAU DARUL DAKWAH") so that
- *  .md and .xlsx exports of the same run produce the identical title.
- *  (Same rule as projectMatcher.normalizeTitle; location lives in Project.location, not the title.) */
+ *  Canonical form, applied in order:
+ *  1. If a BOM marker chunk exists (MASTER/RECONCILIATION + BOM), the project name is the
+ *     chunk immediately AFTER it — never the last chunk (which may be a version suffix
+ *     like "v2 Cost Sheet"; taking it produced the "V2 COST SHEET" bug, Task N).
+ *  2. "Client:/Pipeline:/Drawing:" tails removed.
+ *  3. Location tail after the first comma stripped ("X, BETONG, SARAWAK" -> "X").
+ *  4. Trailing parenthetical refs stripped ("X (S71354)" -> "X"). Refs differ per
+ *     export (S71354 vs Q260163) and are not the name; matching uses bare names.
+ *  (Location lives in Project.location, not the title.) */
 export const extractProjectTitle = (headerText, fallback = '') => {
   if (!headerText) return fallback || 'UNKNOWN PROJECT';
   const s = String(headerText);
-  // Split on em-dash / en-dash / hyphen-pipe patterns, take last meaningful chunk
+  // Split on em-dash / en-dash / hyphen-pipe patterns
   const parts = s.split(/[—–|]/).map((p) => p.trim()).filter(Boolean);
-  let candidate = parts.length > 1 ? parts[parts.length - 1] : s.trim();
-  // Strip trailing qualifiers like ", BETONG, SARAWAK" kept? Keep full but uppercase trim.
-  // Remove leading "SURAU..." noise words? Keep as-is, uppercase.
+  let candidate;
+  const markerIdx = parts.findIndex(
+    (p) => /master|reconciliation/i.test(p) && /bom/i.test(p)
+  );
+  if (markerIdx >= 0 && markerIdx + 1 < parts.length) {
+    candidate = parts[markerIdx + 1];
+  } else {
+    candidate = parts.length > 1 ? parts[parts.length - 1] : s.trim();
+  }
+  // Strip leading section words ("MASTER ...", "PROJECT ...") when no marker split applied
   candidate = candidate.replace(/^(master|reconciliation|bom|project|supplier|purchasing|list|dashboard)\W*/i, '').trim();
-  // If candidate looks like "SURAU DARUL DAKWAH, BETONG..." keep first comma chunk + rest? Keep full minus client noise.
-  // Remove "Client:..." / "Pipeline:..." tails if concatenated
+  // Remove "Client:..." / "Pipeline:..." / "Drawing:..." tails if concatenated
   candidate = candidate.split(/client:|pipeline:|drawing:/i)[0].trim();
   // Strip location tail ("X, BETONG, SARAWAK" -> "X")
   candidate = candidate.split(',')[0].trim();
+  // Strip trailing parenthetical refs ("X (S71354)" -> "X")
+  candidate = candidate.replace(/\s*\([^)]*\)\s*$/, '').trim();
   if (!candidate) return fallback || 'UNKNOWN PROJECT';
   // Normalize: collapse spaces, uppercase for stable matching
   return candidate.replace(/\s+/g, ' ').toUpperCase().replace(/,+$/, '').trim() || 'UNKNOWN PROJECT';

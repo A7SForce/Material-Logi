@@ -4,7 +4,7 @@
 
 Pipeline: `logistics_helper_v3_build_pipeline.md` (5 agents). Status: **all 5 agents done, verified**.
 Follow-ups Task A (same-run fixtures) + Task B (dead-file deletion) + Tasks C/D (README count, supplier browser) + Tasks E/F (dedupe key, PO PDF) + Task G (Phase 5 audit): **done, verified** (G4 physical-device test is human-run — checklist below).
-Verification: `npx vitest run` → **18 files, 53 tests, all pass**. `npx vite build` → **green**.
+Verification: `npx vitest run` → **24 files, 85 tests, all pass**. `npx vite build` → **green**.
 
 ## Agent 1 — Parser ✅ (Task A: deep equality, 2026-09-11)
 Files: `src/utils/importParser/{detectFormat,mdReader,xlsxReader,normalize,index}.js`
@@ -51,7 +51,7 @@ and tested); `PoScreen` also re-checks the gate itself and renders a blocked pan
 The old DSG-B-only flow in `App.jsx` was replaced; its dead utils are now deleted (Task B).
 
 ## Agent 5 — QA ✅
-Files: `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport,redesignUi,approvePending,bomMigration,bomReorder,bomExportPdf}.test.{js,jsx}` (Vitest). 53/53 pass.
+Files: `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport,redesignUi,approvePending,bomMigration,bomReorder,bomExportPdf,itemSupplierPresets,quickOrderGate,quickOrderMessage,quickOrderPhoneNormalize,quickOrderUi,projectMatcher}.test.{js,jsx}` (Vitest). 85/85 pass.
 `poGate.test.js` seeds the **real MD sample** (52 lines, 6 open confirmations) and asserts
 PO-request → Confirm redirect, then gate opens after resolving all.
 Test-count note: 14 → 11 was the Task A rewrite (7 shape-only parser tests consolidated into
@@ -70,7 +70,7 @@ Phase 5 "zero Kill List items" audit now passes on presence (remaining Kill List
 never introduced).
 
 ## Task C — README count ✅ (2026-09-11)
-One line: `npx vitest run` comment 14/14 → 11/11 → 13/13 (Task D) → 18/18 (Tasks E/F) → 25 (Task G) → 27 (md rework) → 34 (H-tasks) → 43 (redesign) → 44 (canonical-name) → 53 (L/M) → 83 (fast ordering).
+One line: `npx vitest run` comment 14/14 → 11/11 → 13/13 (Task D) → 18/18 (Tasks E/F) → 25 (Task G) → 27 (md rework) → 34 (H-tasks) → 43 (redesign) → 44 (canonical-name) → 53 (L/M) → 83 (fast ordering) → 85 (Task N).
 
 ## Task D — Global supplier browser ✅ (2026-09-11, closes Delta D5)- New `src/logic/supplierLinking.js`: single home of the dedupe-by-normalized-businessName
   rule (`linkSupplierEntry`: find-or-create + link). `seedProject.js` refactored onto it —
@@ -212,6 +212,22 @@ Found in the wreckage: stored `BomItem` was silently dropping `unit`/`pack` (eve
 row read back unit-less) — restored + merged (D15); `byDisplayOrder` deduplicated to
 `utils/helpers.js` so message numbering matches the screen.
 
+## Task N — xlsx title on inverted sheet order ✅ (2026-09-15, was OPEN investigation)
+Reproduced on the real file (`Artseven_BOM_Q260163_Kediaman_Puan_Hashima_v2.xlsx`):
+title parsed as "V2 COST SHEET" (last dash-chunk of the Master title) with null location —
+the 2026-09-14 master-preference fix regressed this by preferring a title row it couldn't
+parse. Sheet selection was already content-based (both fixtures are dashboard-first, so
+order never mattered); the bug was pure title parsing. Fixed in `normalize.js`: the project
+name is the chunk immediately AFTER the BOM marker (never the last chunk), trailing
+parenthetical refs stripped (`X (S71354)` → `X`; refs differ per export and are not the
+name). `normalizeTitle` strips parens too, so re-quotes of one site match. The earlier
+synthetic test expecting a ref-bearing title was updated to the bare name (documented
+reversal — refs aren't stable identifiers). Result: `KEDIAMAN PUAN HASHIMA`, 11/4/7/7;
+Surau deep-equality still holds.
+Regression: real file staged as fixture + swapped-order synthetic + `tests/projectMatcher.test.js`.
+Location note: `Project.location` was never populated by any import (pre-existing gap, not
+this regression) — still unpopulated by design; flagged as follow-up, not smuggled in here.
+
 ## Environment fixes (pre-existing, not pipeline scope)
 - `npm install` fails with arborist `edgesOut` on this machine (vitest peer graph) → use
   `npm install --legacy-peer-deps`. Generated `package-lock.json` is committed.
@@ -237,6 +253,9 @@ Agent 6/7 BOM producers, multi-user backend. (PO PDF + WhatsApp landed in Task F
 - Redeploy 2026-09-14 (canonical-name xlsx): 44/44 green, pushed + redeployed production Ready.
 - Redeploy 2026-09-14 (L/M): 53/53 green, build green, pushed (2944760) + redeployed production Ready.
 - Redeploy 2026-09-15 (fast ordering): 83/83 green, build green, pushed (ed8ba9d) + redeployed production Ready (first attempt hit a transient Vercel fetch error; retry clean).
+- Infra note 2026-09-15: full-suite default run once OOM-killed workers mid-run (environment,
+  not code — 66 counted, 3 fallout failures). Re-ran with `npx vitest run --maxWorkers=2`:
+  24 files, 85/85 green. Use constrained workers on small machines.
 
 ## Run
 `npm install --legacy-peer-deps` · `npm run dev` · `npx vitest run` · `npx vite build`

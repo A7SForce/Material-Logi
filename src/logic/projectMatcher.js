@@ -4,14 +4,17 @@
  */
 import { listProjects } from '../data/projectRepo.js';
 
-/** Normalize a title for comparison: uppercase, collapse spaces, strip location tail. */
+/** Normalize a title for comparison: uppercase, collapse spaces, strip location
+ *  tail AND trailing parenthetical refs ("X (S71354)" -> "X"). Refs differ per
+ *  export of the same job, so re-quotes of one site still match (Task N). */
 export const normalizeTitle = (title) => {
   const base = String(title ?? '')
     .toUpperCase()
     .replace(/\s+/g, ' ')
     .trim();
   // "SURAU DARUL DAKWAH, BETONG, SARAWAK" -> "SURAU DARUL DAKWAH"
-  return base.split(',')[0].trim();
+  const bare = base.split(',')[0].trim();
+  return bare.replace(/\s*\([^)]*\)\s*$/, '').trim();
 };
 
 /**

@@ -107,13 +107,14 @@ describe('parser acceptance: canonical-name xlsx BOM header', () => {
       ['ID', 'System / Category', 'Item / Canonical Name', 'Spec / Colour Code', 'Unit', 'Net Qty', 'Wastage', 'Purchase Qty', 'Purchase Pack', 'Basis / Method', 'Confidence', 'Notes / Flags'],
       ['A1-01', 'Custom / CNC', 'PVC Decorative Panel', '10 mm THK PVC', 'pcs', 3, 0, 3, '3 panels', 'drawing count', 'High', 'Long lead'],
     ]);
-    // The real export places its dashboard before the Master BOM. The Master
-    // title must win because it retains the quotation reference.
+    // The real export places its dashboard before the Master BOM. Sheet order
+    // must not matter: both orders resolve the same bare project name
+    // (quotation refs like Q260163 are not the name — see Task N).
     XLSX.utils.book_append_sheet(book, dashboard, 'H. Order-Ready Dashboard');
     XLSX.utils.book_append_sheet(book, sheet, 'A. Master Reconciliation BOM');
 
     expect(parseWorkbook(book)).toMatchObject({
-      projectTitle: 'KEDIAMAN PUAN HASHIMA (Q260163)',
+      projectTitle: 'KEDIAMAN PUAN HASHIMA',
       bomItems: [{
         category: 'Custom / CNC',
         item: 'PVC Decorative Panel',
@@ -123,5 +124,27 @@ describe('parser acceptance: canonical-name xlsx BOM header', () => {
         purchaseQty: 3,
       }],
     });
+
+    // Swapped sheet order (Master first) resolves identically.
+    const swapped = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(swapped, sheet, 'A. Master Reconciliation BOM');
+    XLSX.utils.book_append_sheet(swapped, dashboard, 'H. Order-Ready Dashboard');
+    expect(parseWorkbook(swapped).projectTitle).toBe('KEDIAMAN PUAN HASHIMA');
+  });
+});
+
+describe('Task N regression: real inverted-order file with comma-less Master title', () => {
+  const hashimaPath = path.join(dir, 'fixtures/Artseven_BOM_Q260163_Kediaman_Puan_Hashima_v2.xlsx');
+
+  it('resolves the project title (not a version suffix), with full body counts', async () => {
+    const buf = fs.readFileSync(hashimaPath);
+    const parsed = await parseXlsx(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
+    expect(parsed.projectTitle).toBe('KEDIAMAN PUAN HASHIMA');
+    expect(parsed.bomItems).toHaveLength(11);
+    expect(parsed.shortageConfirmItems).toHaveLength(4);
+    expect(parsed.supplierEntries).toHaveLength(7);
+    expect(parsed.changeLogFromAgent).toHaveLength(7);
+    const panel = parsed.bomItems.find((r) => r.item === 'PVC Decorative Panel (finished lattice)');
+    expect(panel).toMatchObject({ purchaseQty: 3, confidence: 'High' });
   });
 });
