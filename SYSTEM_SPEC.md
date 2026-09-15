@@ -99,11 +99,12 @@ Mobile-first: bottom-30% primary actions, deterministic progress text, specific 
 | `Dashboard` | `src/screens/DashboardScreen.jsx` (recent changes inline = Change Log link; client edit field) | ✅ Done |
 | `BOMReview` | `src/screens/BomScreen.jsx` (purchase view + inline edit + 🔒 indicators; qty/price cells are tap targets; `#` order badges; drag + ▲▼ reorder; Export BOM button; supplier picker + Unassigned-first grouping + Quick Order modal) | ✅ Done, see Deltas D3 |
 | `ConfirmQueue` | `src/screens/ConfirmScreen.jsx` (kind badges; Approve/Dismiss via `approvePending`) | ✅ Done, see Deltas D4 |
-| `SupplierDirectory` + global browser | `src/screens/SuppliersScreen.jsx` (per-project list + searchable Global Directory browser; links run the shared `supplierLinking.js` rule) | ✅ Done (D5 closed 2026-09-11) |
+| `SupplierDirectory` + global browser + CSV | `src/screens/SuppliersScreen.jsx` (per-project list + searchable Global Directory browser; links run the shared `supplierLinking.js` rule; Export CSV download + Import CSV with pre-commit preview) | ✅ Done (D5 closed 2026-09-11; CSV closed 2026-09-15) |
 | `POGenerator` + WhatsApp | `src/screens/PoScreen.jsx` (Generate PO → jspdf bytes download; wa.me link derived from PDF state, gate unchanged) + `src/logic/poDocument.js` (lines/TBD totals/PDF/link builders) | ✅ Done (D6 closed 2026-09-11) |
 | PO gate rule | `src/screens/poGate.js` (`getPoGate` / `resolveTabRequest`, pure + tested) | ✅ Done |
 | App shell / tab bar | `src/App.jsx` (Projects entry → 5-tab project context) | ✅ Done |
-| Tests | `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport,redesignUi,approvePending,bomMigration,bomReorder,bomExportPdf,itemSupplierPresets,quickOrderGate,quickOrderMessage,quickOrderPhoneNormalize,quickOrderUi,projectMatcher}.test.{js,jsx}` (85/85 pass) + `tests/fixtures/` | ✅ Done |
+| Tests | `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport,redesignUi,approvePending,bomMigration,bomReorder,bomExportPdf,itemSupplierPresets,quickOrderGate,quickOrderMessage,quickOrderPhoneNormalize,quickOrderUi,projectMatcher,csvReader,csvExport,supplierCsvImport,supplierCsvUi}.test.{js,jsx}` (100/100 pass) + `tests/fixtures/` | ✅ Done |
+| Supplier CSV | `src/utils/csvImport/{csvReader,csvExport,index}.js` + `src/logic/supplierCsvImport.js` + `getAllSuppliersForExport` (stable read) | ✅ Done (D17) |
 
 ## Annex B — Conformance Deltas (decisions, do not revert without a new entry here)
 
@@ -177,8 +178,15 @@ Mobile-first: bottom-30% primary actions, deterministic progress text, specific 
   after the BOM marker; trailing parenthetical refs stripped everywhere including
   `normalizeTitle`, so re-quotes match. Earlier ref-bearing expectation updated (documented
   reversal: refs aren't stable identifiers). Real inverted-order file staged as a fixture.
+- **D17 — Supplier CSV import/export.** `csvReader` (header-name matching, quote handling,
+  `;`-split tags, row-numbered rejections) → `supplierCsvImport` (existing linkKey reuse,
+  skip-by-default, flag-gated non-blank overwrite, dryRun for confirm counts) →
+  `csvExport` (fixed column order, inverse `;`-join) + `getAllSuppliersForExport`
+  (businessName-ordered stable read). UI: Export/Import buttons + pre-commit preview +
+  verbatim summary on `SuppliersScreen`. Round-trip proven twice: automated test and a
+  real-data run (14 fixture suppliers → export → re-import → 0 created, 14 skipped).
 
-## Annex C — Agent Work Queue (ordered; pipeline + redesign + L/M + fast ordering + Task N done, verified 85/85 + prod build green)
+## Annex C — Agent Work Queue (ordered; pipeline + redesign + L/M + fast ordering + Task N + CSV done, verified 100/100 + prod build green)
 
 1. **~~Delete dead v1 files~~ DONE 2026-09-11 (Task B):** `src/utils/excelParser/dsgB.js`,
    `src/data/structuralKits.js`, `src/utils/coverageRules.js` deleted (empty parent dirs removed).

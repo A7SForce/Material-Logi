@@ -36,6 +36,13 @@ export const listSuppliers = () => db.globalSuppliers.toArray();
 
 export const getSupplier = (id) => db.globalSuppliers.get(id);
 
+/**
+ * Plain full-directory read for CSV export. No filtering, no pagination —
+ * deterministic businessName order so exports (and round-trips) are stable.
+ */
+export const getAllSuppliersForExport = () =>
+  db.globalSuppliers.orderBy('businessName').toArray();
+
 export const updateSupplier = async (id, patch) => {
   await db.globalSuppliers.update(id, patch);
   return db.globalSuppliers.get(id);
@@ -58,6 +65,7 @@ export default {
   bulkCreateSuppliers,
   getSupplier,
   listSuppliers,
+  getAllSuppliersForExport,
   updateSupplier,
   linkSupplierToProject,
   listProjectSuppliers,

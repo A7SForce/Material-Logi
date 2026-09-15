@@ -5,10 +5,19 @@
  * GlobalSupplier record, it only adds a ProjectSupplierLink.
  */
 import React, { useEffect, useState } from 'react';
-import { listProjectSuppliers, listSuppliers, createSupplier, linkSupplierToProject, getSupplier } from '../data/supplierRepo.js';
+import { listProjectSuppliers, listSuppliers, createSupplier, linkSupplierToProject, getSupplier, updateSupplier } from '../data/supplierRepo.js';
 import { linkSupplierEntry } from '../logic/supplierLinking.js';
+import { importSupplierRows } from '../logic/supplierCsvImport.js';
+import { parseSupplierCsv, readUploadAsText } from '../utils/csvImport/index.js';
+import { exportSupplierDirectory } from '../utils/csvImport/csvExport.js';
 
 const linkDeps = { listSuppliers, createSupplier, linkSupplierToProject };
+
+const csvImportDeps = {
+  listSuppliers,
+  createSupplier,
+  updateSupplier,
+};
 
 const matchesQuery = (s, q) => {
   const query = q.trim().toLowerCase();
@@ -26,6 +35,8 @@ export default function SuppliersScreen({ projectId }) {
   const [query, setQuery] = useState('');
   const [activeTag, setActiveTag] = useState(null);
   const [notice, setNotice] = useState(null);
+  const [pendingCsv, setPendingCsv] = useState(null); // { validRows, rejectedRows, preview } — uncommitted
+  const [overwrite, setOverwrite] = useState(false);
 
   const reloadLinks = async () => {
     const links = await listProjectSuppliers(projectId);
@@ -60,6 +71,52 @@ export default function SuppliersScreen({ projectId }) {
     }
   };
 
+  const exportCsv = async () => {
+    try {
+      const csv = await exportSupplierDirectory();
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'supplier-directory.csv';
+      a.click();
+      setNotice('Supplier directory exported.');
+    } catch (err) {
+      setNotice(`Export failed: ${err.message}`);
+    }
+  };
+
+  const stageCsvFile = async (file) => {
+    if (!file) return;
+    setNotice(null);
+    try {
+      const { validRows, rejectedRows } = parseSupplierCsv(await readUploadAsText(file));
+      // dryRun: identical counting, zero writes — the preview commits nothing.
+      const preview = await importSupplierRows(validRows, { dryRun: true }, csvImportDeps);
+      setPendingCsv({ validRows, rejectedRows, preview });
+      setOverwrite(false);
+    } catch (err) {
+      setNotice(`Couldn't read that CSV — check it has a businessName column.`);
+    }
+  };
+
+  const confirmCsvImport = async () => {
+    if (!pendingCsv) return;
+    const result = await importSupplierRows(pendingCsv.validRows, { overwriteExisting: overwrite }, csvImportDeps);
+    const bits = [
+      `${result.created} created`,
+      `${result.skipped} already existed (skipped)`,
+    ];
+    if (result.updated > 0) bits.push(`${result.updated} updated`);
+    if (pendingCsv.rejectedRows.length > 0) {
+      bits.push(`${pendingCsv.rejectedRows.length} rejected (${pendingCsv.rejectedRows.map((r) => `row ${r.rowNumber}: ${r.reason}`).join('; ')})`);
+    }
+    setNotice(bits.join(' · ') + '.');
+    setPendingCsv(null);
+    setOverwrite(false);
+    await reloadLinks();
+  };
+
   // Tag chips are data-driven: only tags actually present in the directory appear.
   const allTags = [...new Set(directory.flatMap((s) => (Array.isArray(s.tags) ? s.tags : [])))];
   const visible = directory.filter(
@@ -69,7 +126,48 @@ export default function SuppliersScreen({ projectId }) {
   return (
     <div className="container">
       <h1>Suppliers ({rows.length})</h1>
-      {notice && <div className="card" style={{ margin: '0.5rem 0' }}>{notice}</div>}
+      {notice && <div className="card" role="status" style={{ margin: '0.5rem 0' }}>{notice}</div>}
+
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+        <button className="secondary" onClick={exportCsv}>Export CSV</button>
+        <button className="secondary" onClick={() => document.getElementById('csv-file-input').click()}>
+          Import CSV
+        </button>
+        <input
+          id="csv-file-input"
+          type="file"
+          accept=".csv,.txt"
+          style={{ display: 'none' }}
+          onChange={(e) => { stageCsvFile(e.target.files[0]); e.target.value = ''; }}
+        />
+      </div>
+
+      {pendingCsv && (
+        <div className="card anim-panel" style={{ marginBottom: '0.5rem' }}>
+          <h3>Confirm CSV import (nothing written yet)</h3>
+          <p>
+            {pendingCsv.preview.created} will be created, {pendingCsv.preview.skipped} already
+            exist, will skip
+            {pendingCsv.rejectedRows.length > 0 &&
+              `, ${pendingCsv.rejectedRows.length} rejected (${pendingCsv.rejectedRows.map((r) => `row ${r.rowNumber}: ${r.reason}`).join('; ')})`}
+            .
+          </p>
+          <label className="small" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', margin: '0.5rem 0' }}>
+            <input
+              type="checkbox"
+              checked={overwrite}
+              onChange={(e) => setOverwrite(e.target.checked)}
+            />
+            Overwrite existing suppliers with CSV values
+          </label>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button onClick={confirmCsvImport}>Confirm import</button>
+            <button className="secondary" onClick={() => { setPendingCsv(null); setOverwrite(false); }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {!browsing && (
         <button onClick={openBrowser} style={{ marginBottom: '0.5rem' }}>

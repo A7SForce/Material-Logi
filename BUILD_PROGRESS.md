@@ -4,7 +4,7 @@
 
 Pipeline: `logistics_helper_v3_build_pipeline.md` (5 agents). Status: **all 5 agents done, verified**.
 Follow-ups Task A (same-run fixtures) + Task B (dead-file deletion) + Tasks C/D (README count, supplier browser) + Tasks E/F (dedupe key, PO PDF) + Task G (Phase 5 audit): **done, verified** (G4 physical-device test is human-run — checklist below).
-Verification: `npx vitest run` → **24 files, 85 tests, all pass**. `npx vite build` → **green**.
+Verification: `npx vitest run` → **28 files, 100 tests, all pass**. `npx vite build` → **green**.
 
 ## Agent 1 — Parser ✅ (Task A: deep equality, 2026-09-11)
 Files: `src/utils/importParser/{detectFormat,mdReader,xlsxReader,normalize,index}.js`
@@ -51,7 +51,7 @@ and tested); `PoScreen` also re-checks the gate itself and renders a blocked pan
 The old DSG-B-only flow in `App.jsx` was replaced; its dead utils are now deleted (Task B).
 
 ## Agent 5 — QA ✅
-Files: `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport,redesignUi,approvePending,bomMigration,bomReorder,bomExportPdf,itemSupplierPresets,quickOrderGate,quickOrderMessage,quickOrderPhoneNormalize,quickOrderUi,projectMatcher}.test.{js,jsx}` (Vitest). 85/85 pass.
+Files: `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport,redesignUi,approvePending,bomMigration,bomReorder,bomExportPdf,itemSupplierPresets,quickOrderGate,quickOrderMessage,quickOrderPhoneNormalize,quickOrderUi,projectMatcher,csvReader,csvExport,supplierCsvImport,supplierCsvUi}.test.{js,jsx}` (Vitest). 100/100 pass.
 `poGate.test.js` seeds the **real MD sample** (52 lines, 6 open confirmations) and asserts
 PO-request → Confirm redirect, then gate opens after resolving all.
 Test-count note: 14 → 11 was the Task A rewrite (7 shape-only parser tests consolidated into
@@ -70,7 +70,7 @@ Phase 5 "zero Kill List items" audit now passes on presence (remaining Kill List
 never introduced).
 
 ## Task C — README count ✅ (2026-09-11)
-One line: `npx vitest run` comment 14/14 → 11/11 → 13/13 (Task D) → 18/18 (Tasks E/F) → 25 (Task G) → 27 (md rework) → 34 (H-tasks) → 43 (redesign) → 44 (canonical-name) → 53 (L/M) → 83 (fast ordering) → 85 (Task N).
+One line: `npx vitest run` comment 14/14 → 11/11 → 13/13 (Task D) → 18/18 (Tasks E/F) → 25 (Task G) → 27 (md rework) → 34 (H-tasks) → 43 (redesign) → 44 (canonical-name) → 53 (L/M) → 83 (fast ordering) → 85 (Task N) → 100 (supplier CSV).
 
 ## Task D — Global supplier browser ✅ (2026-09-11, closes Delta D5)- New `src/logic/supplierLinking.js`: single home of the dedupe-by-normalized-businessName
   rule (`linkSupplierEntry`: find-or-create + link). `seedProject.js` refactored onto it —
@@ -205,9 +205,9 @@ BomScreen picker + Unassigned-first grouping + preview modal. PO gate, merge eng
 `poDocument.js` untouched. Decisions as specified: partial orders allowed, global presets,
 R1 first-segment + `60` default with shape gate, R2 inline pickers, R3 transient note.
 5 new test files (incl. real-fixture phone sweep); 83/83 green.
-Stability note: one transient 1s-timeout flake observed in `redesignUi` client-save under
-full-suite parallel load across 4 runs — identified, given the established 5s tolerance,
-green since. Sole flake on record.
+Stability note: one transient timeout flake in `redesignUi` client-save under full-suite
+parallel load — struck twice total (Task N era + CSV gate run), green on immediate re-run
+both times, same signature. Sole flake on record; tolerance already at 5s.
 Found in the wreckage: stored `BomItem` was silently dropping `unit`/`pack` (every seeded
 row read back unit-less) — restored + merged (D15); `byDisplayOrder` deduplicated to
 `utils/helpers.js` so message numbering matches the screen.
@@ -227,6 +227,18 @@ Surau deep-equality still holds.
 Regression: real file staged as fixture + swapped-order synthetic + `tests/projectMatcher.test.js`.
 Location note: `Project.location` was never populated by any import (pre-existing gap, not
 this regression) — still unpopulated by design; flagged as follow-up, not smuggled in here.
+
+## Supplier CSV import/export ✅ (2026-09-15, pipeline CSV_IMPORT_AGENT_PIPELINE_PROMPT.md)
+Four agents in order (1+3 parallel-safe, then 2, then 4): `csvReader` (header-name matching,
+quote handling, `;`-split tags, spreadsheet-numbered rejections) → `csvExport` (fixed column
+order, inverse join, header-only empty) + `getAllSuppliersForExport` (businessName-ordered
+stable read) → `supplierCsvImport` (existing linkKey reuse, skip-by-default, flag-gated
+non-blank overwrite, dryRun for pre-commit counts) → `SuppliersScreen` Export/Import buttons
++ preview-then-confirm + verbatim summary. One orchestrator addition: dryRun (the confirm
+step needs exact counts without writing — no client-side re-deriving). One test-authored
+correction: overwrite matching needs name AND address (the dedupe key), caught by its own test.
+`supplierLinking.js` imported, never modified. Gate: 100/100 + build green + manual real-data
+round-trip (14 fixture suppliers → export → re-import → 0 created, 14 skipped).
 
 ## Environment fixes (pre-existing, not pipeline scope)
 - `npm install` fails with arborist `edgesOut` on this machine (vitest peer graph) → use
