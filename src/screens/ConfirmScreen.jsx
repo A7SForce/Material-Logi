@@ -7,6 +7,8 @@ import React, { useEffect, useState } from 'react';
 import { listShortageItems } from '../data/shortageRepo.js';
 import * as shortageRepo from '../data/shortageRepo.js';
 import * as bomRepo from '../data/bomRepo.js';
+import * as supplierRepo from '../data/supplierRepo.js';
+import * as presetRepo from '../data/presetRepo.js';
 import { approvePendingItem, rejectPendingItem } from '../logic/approvePending.js';
 
 const approveDeps = {
@@ -16,6 +18,10 @@ const approveDeps = {
   listBomItems: bomRepo.listBomItems,
   deleteBomItem: bomRepo.deleteBomItem,
   maxDisplayOrder: bomRepo.maxDisplayOrder,
+  updateBomItem: bomRepo.updateBomItem,
+  getPreset: presetRepo.getPreset,
+  getSupplier: supplierRepo.getSupplier,
+  linkSupplierToProject: supplierRepo.linkSupplierToProject,
 };
 
 const GROUPS = [

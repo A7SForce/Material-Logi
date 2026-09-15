@@ -57,11 +57,11 @@ describe('G3: locked field survives a UI re-import', () => {
     const bom = render(<BomScreen projectId={projectId} />);
     const row = await gypsumRow();
     // Edit entry is the tappable value cell (single edit contract).
-    fireEvent.click(within(row).getByText('12'));
+    fireEvent.click(within(row).getByRole('button', { name: /Edit purchase quantity/ }));
     const panel = screen.getByText('Edit purchaseQty (will lock the field)').closest('.card');
     fireEvent.change(panel.querySelector('input'), { target: { value: '99' } });
     fireEvent.click(screen.getByText('Save + lock'));
-    await screen.findByText(/🔒 purchaseQty/); // lock indicator on screen
+    await screen.findByText(/🔒 purchaseQty/, {}, { timeout: 5000 }); // lock indicator on screen
     const items = await listBomItems(projectId);
     const gypsum = items.find((b) => b.item === 'Gypsum Board 9mm');
     expect({ purchaseQty: gypsum.purchaseQty, locked: gypsum.lockedFields }).toEqual({

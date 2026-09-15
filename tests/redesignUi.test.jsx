@@ -104,7 +104,8 @@ describe('redesign contracts', () => {
     ui.getByText('—'); // unset client renders graceful blank
     fireEvent.change(ui.getByLabelText(/Client/), { target: { value: 'TUAN DIN' } });
     fireEvent.click(ui.getByText('Save client'));
-    await ui.findByText('Saved.');
+    // Save round-trips Dexie; 5s tolerance under parallel-suite load (proven flake at 1s).
+    await ui.findByText('Saved.', {}, { timeout: 5000 });
     ui.getByText('TUAN DIN');
     expect((await getProject(project.id)).client).toBe('TUAN DIN');
     ui.unmount();

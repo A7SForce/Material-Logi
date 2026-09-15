@@ -75,7 +75,7 @@ export default function App() {
       )}
 
       {tab === 'dashboard' && <DashboardScreen projectId={projectId} onGoConfirm={() => setTab('confirm')} />}
-      {tab === 'bom' && <BomScreen projectId={projectId} />}
+      {tab === 'bom' && <BomScreen projectId={projectId} onGoSuppliers={() => setTab('suppliers')} />}
       {tab === 'confirm' && <ConfirmScreen projectId={projectId} onChanged={() => refreshGate(projectId)} />}
       {tab === 'suppliers' && <SuppliersScreen projectId={projectId} />}
       {tab === 'po' && <PoScreen projectId={projectId} onGoConfirm={() => setTab('confirm')} />}

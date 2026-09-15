@@ -14,6 +14,7 @@ import { countUnresolved, listShortageItems } from '../src/data/shortageRepo.js'
 import * as bomRepo from '../src/data/bomRepo.js';
 import * as shortageRepo from '../src/data/shortageRepo.js';
 import * as supplierRepo from '../src/data/supplierRepo.js';
+import * as presetRepo from '../src/data/presetRepo.js';
 import * as changeLogRepo from '../src/data/changeLogRepo.js';
 import { getPoGate, resolveTabRequest } from '../src/screens/poGate.js';
 import { parseMarkdown } from '../src/utils/importParser/mdReader.js';
@@ -53,6 +54,9 @@ describe('PO gate acceptance: sample project + open confirmation -> redirect', (
       listSuppliers: supplierRepo.listSuppliers,
       linkSupplierToProject: supplierRepo.linkSupplierToProject,
       appendChangeLog: changeLogRepo.appendChangeLog,
+      updateBomItem: bomRepo.updateBomItem,
+      getPreset: presetRepo.getPreset,
+      getSupplier: supplierRepo.getSupplier,
     });
 
     const open = await countUnresolved(project.id);

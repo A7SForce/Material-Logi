@@ -29,13 +29,15 @@ export default function SuppliersScreen({ projectId }) {
 
   const reloadLinks = async () => {
     const links = await listProjectSuppliers(projectId);
-    const joined = await Promise.all(
-      links.map(async (l) => ({
-        link: l,
-        supplier: await getSupplier(l.globalSupplierId),
-      }))
-    );
-    setRows(joined.filter((r) => r.supplier));
+    const joined = (
+      await Promise.all(
+        links.map(async (l) => ({
+          link: l,
+          supplier: await getSupplier(l.globalSupplierId),
+        }))
+      )
+    ).filter((r) => r.supplier);
+    setRows(joined);
     setLinkedIds(new Set(links.map((l) => l.globalSupplierId)));
   };
 

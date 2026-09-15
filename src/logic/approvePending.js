@@ -9,6 +9,7 @@
  *   rejectPendingItem(shortageId, deps) -> resolve only, BOM untouched
  */
 import { itemKey } from './itemMatcher.js';
+import { applyPresetToItem } from './supplierLinking.js';
 
 export const approvePendingItem = async (shortageId, projectId, deps) => {
   const { getShortageItem, resolveShortageItem, createBomItem, listBomItems, deleteBomItem, maxDisplayOrder } = deps;
@@ -30,6 +31,8 @@ export const approvePendingItem = async (shortageId, projectId, deps) => {
         : existing.reduce((m, b) => Math.max(m, typeof b.displayOrder === 'number' ? b.displayOrder : -1), -1);
       const created = await createBomItem({ ...snap, projectId, lockedFields: [], displayOrder: max + 1 });
       bomId = created.id;
+      // Manual-add equivalent: a fresh row picks up its preset, if any.
+      await applyPresetToItem({ ...created, projectId }, deps);
     }
     await resolveShortageItem(shortageId);
     return { action: 'added', bomId };

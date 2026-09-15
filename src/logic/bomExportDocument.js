@@ -10,18 +10,11 @@
  */
 import { jsPDF } from 'jspdf';
 import { isMissingPrice } from './poDocument.js';
+import { byDisplayOrder } from '../utils/helpers.js';
 
 const money = (n) => Math.round(Number(n) * 100) / 100;
 
 export const formatMoney = (n) => `RM ${money(n).toFixed(2)}`;
-
-/** Stable presentation order: displayOrder ascending, legacy nulls last. */
-export const byDisplayOrder = (rows) =>
-  [...(rows || [])].sort((a, b) => {
-    const x = typeof a.displayOrder === 'number' ? a.displayOrder : Number.MAX_SAFE_INTEGER;
-    const y = typeof b.displayOrder === 'number' ? b.displayOrder : Number.MAX_SAFE_INTEGER;
-    return x - y;
-  });
 
 /** One export row per BomItem, numbered from 1 in displayOrder. */
 export const buildBomExportLines = (bomItems) =>
@@ -144,7 +137,6 @@ export const renderBomExportPdf = (data) => {
 };
 
 export default {
-  byDisplayOrder,
   buildBomExportLines,
   buildCategoryRollup,
   buildBomExportTotals,

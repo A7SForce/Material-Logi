@@ -16,6 +16,7 @@ import * as bomRepo from '../src/data/bomRepo.js';
 import * as shortageRepo from '../src/data/shortageRepo.js';
 import * as supplierRepo from '../src/data/supplierRepo.js';
 import * as changeLogRepo from '../src/data/changeLogRepo.js';
+import * as presetRepo from '../src/data/presetRepo.js';
 import { seedProjectFromImport } from '../src/logic/seedProject.js';
 import { mergeParsedImport } from '../src/logic/mergeEngine.js';
 import { approvePendingItem } from '../src/logic/approvePending.js';
@@ -40,6 +41,9 @@ const seedDeps = {
   listSuppliers: supplierRepo.listSuppliers,
   linkSupplierToProject: supplierRepo.linkSupplierToProject,
   appendChangeLog: changeLogRepo.appendChangeLog,
+  updateBomItem: bomRepo.updateBomItem,
+  getPreset: presetRepo.getPreset,
+  getSupplier: supplierRepo.getSupplier,
 };
 
 const THREE = {
@@ -114,6 +118,10 @@ describe('Task L: reorder persists; re-import leaves order alone', () => {
       listBomItems: bomRepo.listBomItems,
       deleteBomItem: bomRepo.deleteBomItem,
       maxDisplayOrder: bomRepo.maxDisplayOrder,
+      updateBomItem: bomRepo.updateBomItem,
+      getPreset: presetRepo.getPreset,
+      getSupplier: supplierRepo.getSupplier,
+      linkSupplierToProject: supplierRepo.linkSupplierToProject,
     });
     expect(await orderOf(project.id)).toEqual([['Alpha', 0], ['Beta', 1], ['Gamma', 2], ['Pedestal', 3]]);
   });

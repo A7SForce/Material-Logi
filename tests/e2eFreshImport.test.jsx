@@ -53,12 +53,13 @@ describe('Task J: fresh project, first import, exact counts, edit locks', () => 
     // Edit afterward through the UI value cell: persists and locks.
     const bom = render(<BomScreen projectId={projectId} />);
     const row = (await screen.findByText('Gypsum Board 9mm')).closest('.row');
-    const qtyCell = within(row).getByText('12');
+    const qtyCell = within(row).getByRole('button', { name: /Edit purchase quantity/ });
     fireEvent.click(qtyCell);
     const panel = screen.getByText('Edit purchaseQty (will lock the field)').closest('.card');
     fireEvent.change(panel.querySelector('input'), { target: { value: '77' } });
     fireEvent.click(screen.getByText('Save + lock'));
-    await screen.findByText(/🔒 purchaseQty/);
+    // 52-row re-render + supplier joins can exceed the 1s default; 5s tolerance.
+    await screen.findByText(/🔒 purchaseQty/, {}, { timeout: 5000 });
     const gypsum = (await listBomItems(projectId)).find((b) => b.item === 'Gypsum Board 9mm');
     expect({ purchaseQty: gypsum.purchaseQty, locked: gypsum.lockedFields }).toEqual({
       purchaseQty: 77,

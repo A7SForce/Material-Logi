@@ -26,6 +26,10 @@ db.version(2).stores(STORES).upgrade(async (tx) => {
   }
 });
 
+// v3: presets table (ItemSupplierPreset). New table only — no data migration.
+// Fresh databases already carry it via STORES; upgraded ones gain it here.
+db.version(3).stores(STORES);
+
 /** Close the DB (used by tests to simulate "close the app"). */
 export const closeDb = () => db.close();
 
@@ -36,7 +40,7 @@ export const openDb = () => db.open();
 export const clearAllTables = async () => {
   await db.transaction(
     'rw',
-    [db.projects, db.bomItems, db.shortageItems, db.globalSuppliers, db.supplierLinks, db.changeLog],
+    [db.projects, db.bomItems, db.shortageItems, db.globalSuppliers, db.supplierLinks, db.changeLog, db.presets],
     async () => {
       await Promise.all([
         db.projects.clear(),
@@ -45,6 +49,7 @@ export const clearAllTables = async () => {
         db.globalSuppliers.clear(),
         db.supplierLinks.clear(),
         db.changeLog.clear(),
+        db.presets.clear(),
       ]);
     }
   );

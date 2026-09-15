@@ -10,6 +10,8 @@ import { clearAllTables } from '../src/data/db.js';
 import { createProject } from '../src/data/projectRepo.js';
 import * as bomRepo from '../src/data/bomRepo.js';
 import * as shortageRepo from '../src/data/shortageRepo.js';
+import * as supplierRepo from '../src/data/supplierRepo.js';
+import * as presetRepo from '../src/data/presetRepo.js';
 import { approvePendingItem, rejectPendingItem } from '../src/logic/approvePending.js';
 
 const deps = {
@@ -18,6 +20,10 @@ const deps = {
   createBomItem: bomRepo.createBomItem,
   listBomItems: bomRepo.listBomItems,
   deleteBomItem: bomRepo.deleteBomItem,
+  updateBomItem: bomRepo.updateBomItem,
+  getPreset: presetRepo.getPreset,
+  getSupplier: supplierRepo.getSupplier,
+  linkSupplierToProject: supplierRepo.linkSupplierToProject,
 };
 
 beforeEach(async () => {

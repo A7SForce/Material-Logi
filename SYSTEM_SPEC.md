@@ -93,17 +93,17 @@ Mobile-first: bottom-30% primary actions, deterministic progress text, specific 
 | §2.1 Import Parser (`detectFormat/mdReader/xlsxReader/normalize`) | `src/utils/importParser/` (+ `index.js`) | ✅ Done, tested vs both sample files |
 | §2.2 Project Matcher | `src/logic/projectMatcher.js` (+ `src/logic/itemMatcher.js`) | ✅ Done; auto-create on no-match per spec |
 | §2.3 Merge Engine | `src/logic/mergeEngine.js` (+ `seedProject.js` first-import path, `approvePending.js` Confirm actions, `reimportProject.js` match-path orchestrator: merge + supplier link) | ✅ Done, 3/3 merge cases pass |
-| §2.4 Data Layer | `src/data/{db,schema,projectRepo,bomRepo,supplierRepo,shortageRepo,changeLogRepo}.js` | ✅ Done (`shortageRepo` added: schema table had no owning repo file) |
+| §2.4 Data Layer | `src/data/{db,schema,projectRepo,bomRepo,supplierRepo,shortageRepo,changeLogRepo,presetRepo}.js` | ✅ Done (`shortageRepo` added: schema table had no owning repo file; `presetRepo` for Annex E) |
 | `ProjectsList` | `src/screens/ProjectsScreen.jsx` (import + two-tap project delete) | ✅ Done |
 | `FileUploader` | Import control inside `ProjectsScreen.jsx` (no separate file) | ✅ Done, see Deltas D2 |
 | `Dashboard` | `src/screens/DashboardScreen.jsx` (recent changes inline = Change Log link; client edit field) | ✅ Done |
-| `BOMReview` | `src/screens/BomScreen.jsx` (purchase view + inline edit + 🔒 indicators; qty/price cells are tap targets; `#` order badges; drag + ▲▼ reorder; Export BOM button) | ✅ Done, see Deltas D3 |
+| `BOMReview` | `src/screens/BomScreen.jsx` (purchase view + inline edit + 🔒 indicators; qty/price cells are tap targets; `#` order badges; drag + ▲▼ reorder; Export BOM button; supplier picker + Unassigned-first grouping + Quick Order modal) | ✅ Done, see Deltas D3 |
 | `ConfirmQueue` | `src/screens/ConfirmScreen.jsx` (kind badges; Approve/Dismiss via `approvePending`) | ✅ Done, see Deltas D4 |
 | `SupplierDirectory` + global browser | `src/screens/SuppliersScreen.jsx` (per-project list + searchable Global Directory browser; links run the shared `supplierLinking.js` rule) | ✅ Done (D5 closed 2026-09-11) |
 | `POGenerator` + WhatsApp | `src/screens/PoScreen.jsx` (Generate PO → jspdf bytes download; wa.me link derived from PDF state, gate unchanged) + `src/logic/poDocument.js` (lines/TBD totals/PDF/link builders) | ✅ Done (D6 closed 2026-09-11) |
 | PO gate rule | `src/screens/poGate.js` (`getPoGate` / `resolveTabRequest`, pure + tested) | ✅ Done |
 | App shell / tab bar | `src/App.jsx` (Projects entry → 5-tab project context) | ✅ Done |
-| Tests | `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport,redesignUi,approvePending,bomMigration,bomReorder,bomExportPdf}.test.{js,jsx}` (53/53 pass) + `tests/fixtures/` | ✅ Done |
+| Tests | `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport,redesignUi,approvePending,bomMigration,bomReorder,bomExportPdf,itemSupplierPresets,quickOrderGate,quickOrderMessage,quickOrderPhoneNormalize,quickOrderUi}.test.{js,jsx}` (83/83 pass) + `tests/fixtures/` | ✅ Done |
 
 ## Annex B — Conformance Deltas (decisions, do not revert without a new entry here)
 
@@ -166,8 +166,14 @@ Mobile-first: bottom-30% primary actions, deterministic progress text, specific 
   `bomRepo.reorderBomItems`; legacy rows backfilled once by a v2 upgrade. Export BOM
   (`bomExportDocument.js`, `BomScreen` button) follows the reference layout with TBD-excluded
   subtotals/grand total; `poDocument.js`/`poGate.js` untouched.
+- **D15 — Fast Ordering: stored `unit`/`pack` restored.** The stored `BomItem` shape was
+  silently dropping the parser's `unit` (and `pack`) — every seeded row read back with a
+  blank unit, which the Quick Order message template needs. Both now persist; `unit` and
+  `pack` also merge as descriptive fields (locks still respected). `byDisplayOrder` factored
+  into `utils/helpers.js` (was triplicated) and reused for message line order, so message
+  numbering always matches the on-screen BOM.
 
-## Annex C — Agent Work Queue (ordered; pipeline + redesign + L/M done, verified 53/53 + prod build green)
+## Annex C — Agent Work Queue (ordered; pipeline + redesign + L/M + fast ordering done, verified 83/83 + prod build green)
 
 1. **~~Delete dead v1 files~~ DONE 2026-09-11 (Task B):** `src/utils/excelParser/dsgB.js`,
    `src/data/structuralKits.js`, `src/utils/coverageRules.js` deleted (empty parent dirs removed).
@@ -196,6 +202,41 @@ Mobile-first: bottom-30% primary actions, deterministic progress text, specific 
   Plus `tests/fixtures/Surau_Darul_Dakwah_BOM.md` — pandas-export variant of the same project
   (title/metadata rows above header, 6 sections; 52/6 parsed, regression-locked, not
   deep-equal to Qwen by wording).
+
+## Annex E — Fast Supplier Ordering (Presets + One-Tap WhatsApp)
+
+Lighter ordering path beside the formal PO flow. The PO gate is untouched: a formal PO still
+requires zero open confirmations and real prices. Quick Order needs only item + spec + qty +
+unit, so per-item eligibility replaces the global gate — with excluded items always counted
+aloud, never silently dropped.
+
+- **Presets** (`ItemSupplierPreset`, PK = itemKey): supervisor-set memory, global across
+  projects, written only via the explicit "Always use this supplier for [item]?" checkbox.
+  Never learned or suggested — a co-occurrence engine would be Kill List item 1.
+  Resolution runs on row creation (seed, approval-insert) and re-import for still-unassigned
+  rows, via `itemMatcher.itemKey` (shared function, not reimplemented). Manual assignments
+  are never overridden; stale presets (supplier deleted) leave rows unassigned.
+- **Assignment model:** `BomItem.assignedSupplierId` → `GlobalSupplier`. Grouping joins the
+  record live — a dangling id falls back to Unassigned, which also covers the "item in a group
+  lacks a supplier" edge deterministically. Assignment is relational: plain update, never
+  locked, never merged.
+- **Reference rule:** a Confirm entry references an item only through an explicit
+  `(refItem, refSpec)` payload (i.e. new/removed pendings). `agent_question` rows carry no
+  item ref and exclude nothing by themselves — mapping their prose to items would be
+  inference. They still block the formal PO globally.
+- **Phone rule (R1):** `normalizePhoneForWhatsApp` — digits, first `/`-segment only, leading
+  `0` → `60` default, plausible shape `^60\d{8,10}$`, else `null` which blocks the send with
+  a fix prompt (never dials a guess). Fixture table uses the real shipped contact strings.
+- **Unassigned flow (R2):** per-row inline pickers always visible; the Unassigned Order button
+  guides ("pick a supplier on each row") and focuses the first picker. Assigned rows move
+  groups immediately, orderable in the same flow.
+- **Note (R3):** optional per-send text appended as `Note: {text}`, transient except for an
+  optional ride-along in the `quick_order_sent` log entry.
+- **Decisions as specified:** partial orders allowed (ready items send, gaps counted aloud);
+  presets global, not per-project. Phone default `60` is Malaysia-only — must not apply
+  blindly if a non-Malaysian supplier ever appears.
+- **Honesty copy:** preview modal shows the exact message; "Send via WhatsApp" opens
+  `wa.me/{digits}?text=…` after writing the traceability log — the app never sends itself.
 
 > *"A site supervisor drops the reconciled file, sees which of their projects it belongs to,
 > resolves any open questions the agent flagged, taps through supplier assignment, generates a PO,

@@ -9,7 +9,7 @@
  * Pure orchestration: mergeEngine.js itself is untouched.
  */
 import { mergeParsedImport } from './mergeEngine.js';
-import { linkSupplierEntry } from './supplierLinking.js';
+import { linkSupplierEntry, applyPresetsToUnassigned } from './supplierLinking.js';
 
 /**
  * @returns {Promise<MergeResult & { supplierCount: number }>}
@@ -20,7 +20,9 @@ export const reimportProject = async (projectId, parsedImport, deps) => {
   for (const entry of parsedImport.supplierEntries || []) {
     supplierRows.push(await linkSupplierEntry(projectId, entry, deps));
   }
-  return { ...merge, supplierCount: supplierRows.length };
+  // Presets for rows still unassigned (manual links never touched).
+  const presetsApplied = await applyPresetsToUnassigned(projectId, deps);
+  return { ...merge, supplierCount: supplierRows.length, presetsApplied: presetsApplied.length };
 };
 
 export default { reimportProject };

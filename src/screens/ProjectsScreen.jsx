@@ -13,6 +13,7 @@ import * as bomRepo from '../data/bomRepo.js';
 import * as shortageRepo from '../data/shortageRepo.js';
 import * as supplierRepo from '../data/supplierRepo.js';
 import * as changeLogRepo from '../data/changeLogRepo.js';
+import * as presetRepo from '../data/presetRepo.js';
 
 const mergeDeps = {
   listBomItems: bomRepo.listBomItems,
@@ -31,6 +32,9 @@ const seedDeps = {
   listSuppliers: supplierRepo.listSuppliers,
   linkSupplierToProject: supplierRepo.linkSupplierToProject,
   appendChangeLog: changeLogRepo.appendChangeLog,
+  updateBomItem: bomRepo.updateBomItem,
+  getPreset: presetRepo.getPreset,
+  getSupplier: supplierRepo.getSupplier,
 };
 
 // Merge path needs the merge deps plus the supplier-linking deps.
@@ -39,6 +43,9 @@ const reimportDeps = {
   listSuppliers: supplierRepo.listSuppliers,
   createSupplier: supplierRepo.createSupplier,
   linkSupplierToProject: supplierRepo.linkSupplierToProject,
+  updateBomItem: bomRepo.updateBomItem,
+  getPreset: presetRepo.getPreset,
+  getSupplier: supplierRepo.getSupplier,
 };
 
 export default function ProjectsScreen({ onOpenProject }) {

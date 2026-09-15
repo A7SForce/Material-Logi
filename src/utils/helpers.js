@@ -38,6 +38,14 @@ export const formatShortDate = (iso) => {
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
+/** Stable presentation order: displayOrder ascending, legacy nulls last. */
+export const byDisplayOrder = (rows) =>
+  [...(rows || [])].sort((a, b) => {
+    const x = typeof a.displayOrder === 'number' ? a.displayOrder : Number.MAX_SAFE_INTEGER;
+    const y = typeof b.displayOrder === 'number' ? b.displayOrder : Number.MAX_SAFE_INTEGER;
+    return x - y;
+  });
+
 /** Round to specified decimal places */
 export const roundTo = (num, decimals = 2) => {
     const factor = Math.pow(10, decimals);

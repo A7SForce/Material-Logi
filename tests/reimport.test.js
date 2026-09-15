@@ -12,6 +12,7 @@ import * as bomRepo from '../src/data/bomRepo.js';
 import * as shortageRepo from '../src/data/shortageRepo.js';
 import * as supplierRepo from '../src/data/supplierRepo.js';
 import * as changeLogRepo from '../src/data/changeLogRepo.js';
+import * as presetRepo from '../src/data/presetRepo.js';
 import { seedProjectFromImport } from '../src/logic/seedProject.js';
 import { reimportProject } from '../src/logic/reimportProject.js';
 
@@ -22,6 +23,9 @@ const seedDeps = {
   listSuppliers: supplierRepo.listSuppliers,
   linkSupplierToProject: supplierRepo.linkSupplierToProject,
   appendChangeLog: changeLogRepo.appendChangeLog,
+  updateBomItem: bomRepo.updateBomItem,
+  getPreset: presetRepo.getPreset,
+  getSupplier: supplierRepo.getSupplier,
 };
 
 const reimportDeps = {
@@ -35,6 +39,8 @@ const reimportDeps = {
   listSuppliers: supplierRepo.listSuppliers,
   createSupplier: supplierRepo.createSupplier,
   linkSupplierToProject: supplierRepo.linkSupplierToProject,
+  getPreset: presetRepo.getPreset,
+  getSupplier: supplierRepo.getSupplier,
 };
 
 const ENTRY_A = { businessName: 'Store A', address: 'Betong', contact: null, specialty: null, sourceUrl: null };

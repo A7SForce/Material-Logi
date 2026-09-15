@@ -9,6 +9,10 @@
  *                     lockedFields: string[] }
  *   + displayOrder: number | null (Task L — cosmetic presentation order only;
  *     never read by merge/itemMatcher; null = legacy row, sorts last)
+ *   + assignedSupplierId: string | null (Fast Ordering — item → GlobalSupplier FK;
+ *     set manually or via ItemSupplierPreset; never locked, never merged)
+ * ItemSupplierPreset { id (= itemKey), itemKey, globalSupplierId, updatedAt }
+ *   (Fast Ordering — supervisor-set memory, global across projects)
  * ShortageConfirmItem { id, projectId, severity, issue, missingInfo,
  *                       confirmationRequired, owner, resolved: bool,
  *                       kind: "agent_question" | "new_item_pending" | "removed_item_pending" }
@@ -27,6 +31,7 @@ export const STORES = {
   globalSuppliers: 'id, businessName',
   supplierLinks: '[projectId+globalSupplierId], projectId, globalSupplierId',
   changeLog: 'id, projectId, timestamp',
+  presets: 'id, itemKey',
 };
 
 export const SHORTAGE_KINDS = ['agent_question', 'new_item_pending', 'removed_item_pending'];
@@ -40,6 +45,8 @@ export const defaultBomItem = (partial = {}) => ({
   item: partial.item ?? null,
   spec: partial.spec ?? null,
   category: partial.category ?? null,
+  unit: partial.unit ?? null,
+  pack: partial.pack ?? null,
   netQty: partial.netQty ?? null,
   wastagePct: partial.wastagePct ?? null,
   purchaseQty: partial.purchaseQty ?? null,
@@ -51,6 +58,8 @@ export const defaultBomItem = (partial = {}) => ({
   lockedFields: Array.isArray(partial.lockedFields) ? [...partial.lockedFields] : [],
   // Cosmetic presentation order only. Never read by merge/itemMatcher (see D14).
   displayOrder: typeof partial.displayOrder === 'number' ? partial.displayOrder : null,
+  // Item → supplier assignment. Relational, not a value: never locked, never merged.
+  assignedSupplierId: partial.assignedSupplierId ?? null,
 });
 
 /** Fresh defaults for a new ShortageConfirmItem row. */

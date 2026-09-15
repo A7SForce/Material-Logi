@@ -14,12 +14,14 @@
 import { findMatch } from './itemMatcher.js';
 
 // Data fields diffed by the merge. Identity/meta fields (id, projectId,
-// lockedFields) are never overwritten by an import.
+// lockedFields) are never overwritten by an import. displayOrder and
+// assignedSupplierId are likewise excluded (cosmetic / relational, D14).
 export const MERGE_FIELDS = [
   'item',
   'spec',
   'category',
   'unit',
+  'pack',
   'netQty',
   'wastagePct',
   'purchaseQty',
@@ -27,7 +29,6 @@ export const MERGE_FIELDS = [
   'estTotal',
   'basis',
   'confidence',
-  'pack',
   'notes',
 ];
 

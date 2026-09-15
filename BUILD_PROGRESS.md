@@ -70,7 +70,7 @@ Phase 5 "zero Kill List items" audit now passes on presence (remaining Kill List
 never introduced).
 
 ## Task C — README count ✅ (2026-09-11)
-One line: `npx vitest run` comment 14/14 → 11/11 → 13/13 (Task D) → 18/18 (Tasks E/F) → 25 (Task G) → 27 (md rework) → 34 (H-tasks) → 43 (redesign) → 44 (canonical-name) → 53 (L/M).
+One line: `npx vitest run` comment 14/14 → 11/11 → 13/13 (Task D) → 18/18 (Tasks E/F) → 25 (Task G) → 27 (md rework) → 34 (H-tasks) → 43 (redesign) → 44 (canonical-name) → 53 (L/M) → 83 (fast ordering).
 
 ## Task D — Global supplier browser ✅ (2026-09-11, closes Delta D5)- New `src/logic/supplierLinking.js`: single home of the dedupe-by-normalized-businessName
   rule (`linkSupplierEntry`: find-or-create + link). `seedProject.js` refactored onto it —
@@ -176,8 +176,7 @@ match, no ID-column confusion) and prefers the Master title row over the dashboa
 for the project title (keeps quotation refs like Q260163). Synthetic workbook test in
 `parser.test.js`; xlsx↔md deep-equality still holds.
 
-## Task L — Line numbering + reorder ✅ (2026-09-14, before M per ticket)
-`BomItem.displayOrder` (cosmetic-only; absent from MERGE_FIELDS so merge/itemMatcher can't
+## Task L — Line numbering + reorder ✅ (2026-09-14, before M per ticket)`BomItem.displayOrder` (cosmetic-only; absent from MERGE_FIELDS so merge/itemMatcher can't
 see it) + `Project.client` (manual, optional, Dashboard edit, never inferred). Seed assigns
 import order; approvals append at max+1; `bomRepo.reorderBomItems` persists full orderings
 in one transaction; legacy rows backfilled once by a Dexie v2 upgrade (genuine v1 DB test).
@@ -197,6 +196,21 @@ Missing price → TBD row, excluded from both subtotal and grand total. `tests/b
 50507 grand, TBD exclusion 50507−336=50171 with byte assertions). Client UI covered in
 `redesignUi` (+1). Caught by its own test: my hand arithmetic wrote 50371 — the suite
 does its job.
+
+## Fast Supplier Ordering ✅ (2026-09-15, ticket FAST_ORDER_FEATURE_SPEC.md)
+Presets + one-tap WhatsApp beside the PO flow (`SYSTEM_SPEC.md` Annex E). New: `presets`
+table (Dexie v3), `ItemSupplierPreset` repo, `BomItem.assignedSupplierId`, `quickOrder.js`
+(eligibility/message/phone/link pure functions), preset resolution in seed/approve/reimport,
+BomScreen picker + Unassigned-first grouping + preview modal. PO gate, merge engine, and
+`poDocument.js` untouched. Decisions as specified: partial orders allowed, global presets,
+R1 first-segment + `60` default with shape gate, R2 inline pickers, R3 transient note.
+5 new test files (incl. real-fixture phone sweep); 83/83 green.
+Stability note: one transient 1s-timeout flake observed in `redesignUi` client-save under
+full-suite parallel load across 4 runs — identified, given the established 5s tolerance,
+green since. Sole flake on record.
+Found in the wreckage: stored `BomItem` was silently dropping `unit`/`pack` (every seeded
+row read back unit-less) — restored + merged (D15); `byDisplayOrder` deduplicated to
+`utils/helpers.js` so message numbering matches the screen.
 
 ## Environment fixes (pre-existing, not pipeline scope)
 - `npm install` fails with arborist `edgesOut` on this machine (vitest peer graph) → use

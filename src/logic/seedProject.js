@@ -10,7 +10,7 @@
  *     (dedupes suppliers by normalized businessName so re-seeds share rows)
  *   - ChangeLogEntry(actor "agent", field "import_note") for each source change-log line
  */
-import { linkSupplierEntry } from './supplierLinking.js';
+import { linkSupplierEntry, applyPresetToItem } from './supplierLinking.js';
 
 export const seedProjectFromImport = async (projectId, parsedImport, deps) => {
   const {
@@ -42,6 +42,12 @@ export const seedProjectFromImport = async (projectId, parsedImport, deps) => {
   const supplierRows = [];
   for (const entry of parsedImport.supplierEntries || []) {
     supplierRows.push(await linkSupplierEntry(projectId, entry, deps));
+  }
+
+  // Preset resolution: newly created rows with no assignment pick up any
+  // supervisor-set preset (never overrides — created rows are always unassigned).
+  for (const bomRow of bomRows) {
+    await applyPresetToItem(bomRow, deps);
   }
 
   const changeLogIds = [];
