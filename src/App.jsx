@@ -18,6 +18,7 @@ import SuppliersScreen from './screens/SuppliersScreen.jsx';
 import PoScreen from './screens/PoScreen.jsx';
 import { resolveTabRequest } from './screens/poGate.js';
 import { countUnresolved } from './data/shortageRepo.js';
+import { seedInitialSuppliers } from './data/db.js';
 
 const TABS = [
   { id: 'dashboard', label: 'Dashboard', short: 'Dash' },
@@ -32,6 +33,9 @@ export default function App() {
   const [tab, setTab] = useState('dashboard');
   const [gateNotice, setGateNotice] = useState(null);
   const [openCount, setOpenCount] = useState(0);
+
+  // Seed the global supplier directory on first load (no-op if already populated).
+  useEffect(() => { seedInitialSuppliers(); }, []);
 
   // Live badge count: re-read on project/tab change and after Confirm actions.
   const refreshGate = async (id) => {

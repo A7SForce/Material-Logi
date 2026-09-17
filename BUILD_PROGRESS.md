@@ -4,7 +4,7 @@
 
 Pipeline: `logistics_helper_v3_build_pipeline.md` (5 agents). Status: **all 5 agents done, verified**.
 Follow-ups Task A (same-run fixtures) + Task B (dead-file deletion) + Tasks C/D (README count, supplier browser) + Tasks E/F (dedupe key, PO PDF) + Task G (Phase 5 audit): **done, verified** (G4 physical-device test is human-run — checklist below).
-Verification: `npx vitest run` → **30 files, 108 tests, all pass**. `npx vite build` → **green**.
+Verification: `npx vitest run` → **31 files, 113 tests, all pass**. `npx vite build` → **green**.
 
 ## Agent 1 — Parser ✅ (Task A: deep equality, 2026-09-11)
 Files: `src/utils/importParser/{detectFormat,mdReader,xlsxReader,normalize,index}.js`
@@ -70,7 +70,7 @@ Phase 5 "zero Kill List items" audit now passes on presence (remaining Kill List
 never introduced).
 
 ## Task C — README count ✅ (2026-09-11)
-One line: `npx vitest run` comment 14/14 → 11/11 → 13/13 (Task D) → 18/18 (Tasks E/F) → 25 (Task G) → 27 (md rework) → 34 (H-tasks) → 43 (redesign) → 44 (canonical-name) → 53 (L/M) → 83 (fast ordering) → 85 (Task N) → 100 (supplier CSV) → 104 (slice 8) → 108 (slice 9).
+One line: `npx vitest run` comment 14/14 → 11/11 → 13/13 (Task D) → 18/18 (Tasks E/F) → 25 (Task G) → 27 (md rework) → 34 (H-tasks) → 43 (redesign) → 44 (canonical-name) → 53 (L/M) → 83 (fast ordering) → 85 (Task N) → 100 (supplier CSV) → 104 (slice 8) → 108 (slice 9) → 113 (supplier seed).
 
 ## Task D — Global supplier browser ✅ (2026-09-11, closes Delta D5)- New `src/logic/supplierLinking.js`: single home of the dedupe-by-normalized-businessName
   rule (`linkSupplierEntry`: find-or-create + link). `seedProject.js` refactored onto it —
@@ -308,3 +308,12 @@ Agent 6/7 BOM producers, multi-user backend. (PO PDF + WhatsApp landed in Task F
 
 ## Run
 `npm install --legacy-peer-deps` · `npm run dev` · `npx vitest run` · `npx vite build`
+
+## Supplier library seed ✅ (2026-09-17, CSV import)
+130 unique suppliers parsed from `suppliers_2026-09-15.csv` (133 rows, 3 duplicates removed).
+Categories mapped to `tags[]`, WhatsApp → `contact`, Location → `address`. Seed file
+`src/data/seedSuppliers.json` checked into repo. `seedInitialSuppliers()` in `db.js` loads
+the directory on first app open (no-op if already populated). SuppliersScreen browse + CSV
+export/import unchanged — the seed is the starting directory, not a replacement for runtime
+management. `tests/supplierSeed.test.js` (5 tests): loads all, idempotent, required fields,
+phone presence, tags mapping. 113/113 green, build green.

@@ -4,6 +4,7 @@
  */
 import Dexie from 'dexie';
 import { DB_NAME, STORES } from './schema.js';
+import seedSuppliers from './seedSuppliers.json';
 
 export const db = new Dexie(DB_NAME);
 
@@ -35,6 +36,22 @@ export const closeDb = () => db.close();
 
 /** Re-open the DB (used by tests to simulate "reopen the app"). */
 export const openDb = () => db.open();
+
+/**
+ * Seed the global supplier directory from the bundled CSV-derived seed file.
+ * Runs at most once per database lifetime: skips if the table already has rows
+ * (imported via SuppliersScreen or from a previous session). Deterministic —
+ * the seed file is checked into the repo and never changes at runtime.
+ */
+export const seedInitialSuppliers = async () => {
+  const count = await db.globalSuppliers.count();
+  if (count > 0) return;
+  const rows = seedSuppliers.map((s) => ({
+    ...s,
+    id: crypto.randomUUID ? crypto.randomUUID() : `seed-${Math.random().toString(36).slice(2)}`,
+  }));
+  await db.globalSuppliers.bulkAdd(rows);
+};
 
 /** Delete all rows in every table (test isolation only — never call in UI). */
 export const clearAllTables = async () => {
