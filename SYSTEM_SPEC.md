@@ -97,13 +97,13 @@ Mobile-first: bottom-30% primary actions, deterministic progress text, specific 
 | `ProjectsList` | `src/screens/ProjectsScreen.jsx` (import + two-tap project delete) | ✅ Done |
 | `FileUploader` | Import control inside `ProjectsScreen.jsx` (no separate file) | ✅ Done, see Deltas D2 |
 | `Dashboard` | `src/screens/DashboardScreen.jsx` (recent changes inline = Change Log link; client edit field) | ✅ Done |
-| `BOMReview` | `src/screens/BomScreen.jsx` (purchase view + inline edit + 🔒 indicators; qty/price cells are tap targets; `#` order badges; drag + ▲▼ reorder; Export BOM button; supplier picker + Unassigned-first grouping + Quick Order modal) | ✅ Done, see Deltas D3 |
+| `BOMReview` | `src/screens/BomScreen.jsx` (purchase view + inline edit + 🔒 indicators; qty/price cells are tap targets; `#` order badges; drag + ▲▼ reorder; Export BOM button; supplier picker + Unassigned-first grouping + Quick Order modal; Suppliers/Category/All views, category grouping display-only) | ✅ Done, see Deltas D3 |
 | `ConfirmQueue` | `src/screens/ConfirmScreen.jsx` (kind badges; Approve/Dismiss via `approvePending`) | ✅ Done, see Deltas D4 |
 | `SupplierDirectory` + global browser + CSV | `src/screens/SuppliersScreen.jsx` (per-project list + searchable Global Directory browser; links run the shared `supplierLinking.js` rule; Export CSV download + Import CSV with pre-commit preview) | ✅ Done (D5 closed 2026-09-11; CSV closed 2026-09-15) |
 | `POGenerator` + WhatsApp | `src/screens/PoScreen.jsx` (Generate PO → jspdf bytes download; wa.me link derived from PDF state, gate unchanged) + `src/logic/poDocument.js` (lines/TBD totals/PDF/link builders) | ✅ Done (D6 closed 2026-09-11) |
 | PO gate rule | `src/screens/poGate.js` (`getPoGate` / `resolveTabRequest`, pure + tested) | ✅ Done |
 | App shell / tab bar | `src/App.jsx` (Projects entry → 5-tab project context) | ✅ Done |
-| Tests | `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport,redesignUi,approvePending,bomMigration,bomReorder,bomExportPdf,itemSupplierPresets,quickOrderGate,quickOrderMessage,quickOrderPhoneNormalize,quickOrderUi,projectMatcher,csvReader,csvExport,supplierCsvImport,supplierCsvUi}.test.{js,jsx}` (100/100 pass) + `tests/fixtures/` | ✅ Done |
+| Tests | `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport,redesignUi,approvePending,bomMigration,bomReorder,bomExportPdf,itemSupplierPresets,quickOrderGate,quickOrderMessage,quickOrderPhoneNormalize,quickOrderUi,projectMatcher,csvReader,csvExport,supplierCsvImport,supplierCsvUi,bomCategoryView,bomCountConsistency}.test.{js,jsx}` (108/108 pass) + `tests/fixtures/` | ✅ Done |
 | Supplier CSV | `src/utils/csvImport/{csvReader,csvExport,index}.js` + `src/logic/supplierCsvImport.js` + `getAllSuppliersForExport` (stable read) | ✅ Done (D17) |
 
 ## Annex B — Conformance Deltas (decisions, do not revert without a new entry here)
@@ -185,8 +185,21 @@ Mobile-first: bottom-30% primary actions, deterministic progress text, specific 
   (businessName-ordered stable read). UI: Export/Import buttons + pre-commit preview +
   verbatim summary on `SuppliersScreen`. Round-trip proven twice: automated test and a
   real-data run (14 fixture suppliers → export → re-import → 0 created, 14 skipped).
+- **D18 — Visual polish pass (parallel agent).** Page headers, stat grid, file-picker
+  label, hover states, responsive rules. Verified presentational-only; one test repaired
+  for split heading text. No logic, schema, or gate changes.
+- **D19 — Slice-8 follow-ups.** NULL contacts → "Contact not listed"; severity tints per
+  tier (case-normalized lookup, INFO included); locked gets cool blue (was sharing default
+  white with LOW); 1024px grid breakpoint; display-only category grouping with supplier
+  default kept (deviation from flat-default recommendation, recorded in 08).
+- **D20 — Slice-9 follow-ups.** Tab bar: `overflow-x: auto` at ≤640px with horizontal
+  scroll, buttons `flex: 0 0 auto`, short labels (Dash/Cfm/Supp) at narrow widths, hidden
+  scrollbar. BOMScreen: duplicate-key warning fixed (index-suffixed unassigned group keys);
+  async-load timing bug in test fixed (capture header after rows render); debug
+  console.logs removed; 3 debug test files deleted. `redesignUi` PO-tab selector fixed
+  for nested-span label structure.
 
-## Annex C — Agent Work Queue (ordered; pipeline + redesign + L/M + fast ordering + Task N + CSV done, verified 100/100 + prod build green)
+## Annex C — Agent Work Queue (ordered; pipeline + redesign + L/M + fast ordering + Task N + CSV + slice 8+9 done, verified 108/108 + prod build green)
 
 1. **~~Delete dead v1 files~~ DONE 2026-09-11 (Task B):** `src/utils/excelParser/dsgB.js`,
    `src/data/structuralKits.js`, `src/utils/coverageRules.js` deleted (empty parent dirs removed).

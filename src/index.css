@@ -23,6 +23,7 @@
   --blocked: #b91c1c;
   --tbd: #475569;
   --radius: 0.75rem;
+  --shadow: 0 10px 30px rgba(15, 23, 42, 0.07);
 }
 
 html {
@@ -44,6 +45,16 @@ body {
   flex-direction: column;
 }
 
+.app-shell { min-height: 100vh; }
+
+.page-header { margin: 0.5rem 0 1.5rem; }
+.page-header.compact { margin-bottom: 1rem; }
+.eyebrow { color: var(--primary); font-size: 0.75rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; margin-bottom: 0.25rem; }
+.page-intro, .muted { color: var(--text-muted); }
+.page-intro { max-width: 38rem; margin-top: 0.5rem; }
+.section-heading { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin: 1.5rem 0 0.75rem; }
+.action-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+
 h1 { font-size: 1.75rem; font-weight: 700; line-height: 1.2; }
 h2 { font-size: 1.25rem; font-weight: 700; line-height: 1.3; }
 small, .small { font-size: 0.875rem; }
@@ -62,7 +73,13 @@ button, .btn {
   border: 2px solid transparent;
   background: var(--primary);
   color: #ffffff;
+  transition: background-color 120ms ease-out, border-color 120ms ease-out, transform 120ms ease-out, box-shadow 120ms ease-out;
 }
+
+button:not([disabled]):hover, .btn:hover { background: var(--primary-dark); box-shadow: 0 3px 8px rgba(3, 105, 161, 0.2); }
+button.secondary:hover, .btn.secondary:hover { background: #f8fafc; }
+button.danger-ghost:hover, .btn.danger-ghost:hover { background: var(--blocked-bg); }
+button:not([disabled]):active, .btn:active { transform: translateY(1px); box-shadow: none; }
 
 button.secondary, .btn.secondary {
   background: var(--surface);
@@ -115,7 +132,7 @@ input, select, textarea {
 }
 
 .tab-bar button {
-  flex: 1;
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -129,12 +146,17 @@ input, select, textarea {
   font-weight: 600;
   min-height: 48px;
   padding: 0.5rem 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tab-bar button.active {
   color: var(--primary);
   border-top-color: var(--primary);
 }
+
+.tab-label-short { display: none; }
 
 .tab-badge {
   display: inline-block;
@@ -193,6 +215,20 @@ input, select, textarea {
   color: var(--warning);
 }
 
+.badge.severity-low {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+/* Locked is calm and cool: protected, intentional, non-urgent. Deliberately
+   distinct from the warm pending/severity tints (contrast 7.15:1). */
+.badge.locked {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1e40af;
+}
+
 .badge.status-ready, .badge.status-saved {
   border-color: var(--success);
   color: var(--success);
@@ -245,7 +281,7 @@ a.btn {
 
 .container {
   width: 100%;
-  max-width: 1200px;
+  max-width: 960px;
   margin: 0 auto;
   padding: 1rem;
   padding-bottom: 6rem; /* Space for tab bar */
@@ -256,13 +292,40 @@ a.btn {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow);
 }
+
+.import-card { text-align: center; padding: 1.5rem; border-style: dashed; border-width: 2px; }
+.file-picker { display: flex; flex-direction: column; align-items: center; gap: 0.125rem; max-width: 24rem; margin: 1rem auto 0; padding: 0.8rem 1rem; border: 2px solid var(--primary); border-radius: 0.5rem; color: var(--primary); cursor: pointer; font-weight: 700; }
+.file-picker:hover { background: #e0f2fe; }
+.file-picker small { font-weight: 500; color: var(--text-muted); }
+.file-picker input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.file-picker.is-busy { opacity: 0.6; cursor: wait; }
+.project-card { margin-bottom: 0.65rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.project-name { font-size: 1.05rem; overflow-wrap: anywhere; }
+.project-card .action-row { margin-top: 0; flex-shrink: 0; }
+.empty-state { display: flex; flex-direction: column; gap: 0.25rem; text-align: center; color: var(--text-muted); padding: 2.5rem 1rem; border: 2px dashed var(--border); border-radius: var(--radius); }
+.empty-state strong { color: var(--text); }
+.dashboard-card { margin: 1rem 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.stat { display: flex; flex-direction: column; gap: 0.2rem; }
+.stat span { font-size: 0.8rem; color: var(--text-muted); }
+.stat strong { font-size: 1.15rem; overflow-wrap: anywhere; }
+.project-detail { margin-top: 1rem; }
 
 .text-primary { color: var(--primary); }
 .text-success { color: var(--success); }
 .text-warning { color: var(--warning); }
 .text-error { color: var(--error); }
+
+/* Desktop: row-lists re-flow into a multi-column grid (same markup, CSS only). */
+@media (min-width: 1024px) {
+  .rowlist {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 0.75rem;
+  }
+}
 
 /* Reduced motion: everything instant. */
 @media (prefers-reduced-motion: reduce) {
@@ -270,6 +333,18 @@ a.btn {
     transition: none !important;
     animation: none !important;
   }
+}
+
+@media (max-width: 640px) {
+  .container { padding: 1rem; padding-bottom: 6.5rem; }
+  .project-card { display: block; }
+  .project-card .action-row button { flex: 1; }
+  .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem 0.75rem; }
+  .tab-bar { justify-content: flex-start; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-left: 0.25rem; padding-right: 0.25rem; scrollbar-width: none; }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab-bar button { flex: 0 0 auto; font-size: 0.75rem; padding: 0.5rem 0.5rem; }
+  .tab-label-full { display: none; }
+  .tab-label-short { display: inline; }
 }
 
 /* Motion answers only: where content went, what changed, is it working. */

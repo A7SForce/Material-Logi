@@ -25,7 +25,7 @@ try {
   await m.waitForTimeout(800);
   await m.screenshot({ path: shot('mobile-dashboard') });
   await m.getByRole('button', { name: /BOM/ }).click();
-  await m.getByText('Gypsum Board 9mm').waitFor({ timeout: 10000 });
+  await m.getByText('Gypsum Board 9mm', { exact: true }).waitFor({ timeout: 10000 });
   await m.waitForTimeout(500);
   await m.screenshot({ path: shot('mobile-bom'), fullPage: true });
   await m.getByRole('button', { name: /Confirm/ }).click();
@@ -47,7 +47,7 @@ try {
   await d.waitForTimeout(800);
   await d.screenshot({ path: shot('desktop-dashboard') });
   await d.getByRole('button', { name: /BOM/ }).click();
-  await d.getByText('Gypsum Board 9mm').waitFor({ timeout: 10000 });
+  await d.getByText('Gypsum Board 9mm', { exact: true }).waitFor({ timeout: 10000 });
   await d.screenshot({ path: shot('desktop-bom') });
   await d.close();
 

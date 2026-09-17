@@ -20,11 +20,11 @@ import { resolveTabRequest } from './screens/poGate.js';
 import { countUnresolved } from './data/shortageRepo.js';
 
 const TABS = [
-  { id: 'dashboard', label: 'Dashboard' },
-  { id: 'bom', label: 'BOM' },
-  { id: 'confirm', label: 'Confirm' },
-  { id: 'suppliers', label: 'Suppliers' },
-  { id: 'po', label: 'PO' },
+  { id: 'dashboard', label: 'Dashboard', short: 'Dash' },
+  { id: 'bom', label: 'BOM', short: 'BOM' },
+  { id: 'confirm', label: 'Confirm', short: 'Cfm' },
+  { id: 'suppliers', label: 'Suppliers', short: 'Supp' },
+  { id: 'po', label: 'PO', short: 'PO' },
 ];
 
 export default function App() {
@@ -65,7 +65,7 @@ export default function App() {
   }
 
   return (
-    <div>
+    <div className="app-shell">
       {gateNotice && (
         <div className="container" style={{ paddingBottom: 0 }}>
           <div className="banner blocked" role="alert">
@@ -91,7 +91,8 @@ export default function App() {
             aria-current={tab === t.id ? 'page' : undefined}
             onClick={() => requestTab(t.id)}
           >
-            {t.label}
+            <span className="tab-label-full">{t.label}</span>
+            <span className="tab-label-short">{t.short}</span>
             {t.id === 'confirm' && openCount > 0 && (
               <span className="tab-badge" aria-label={`${openCount} open confirmations`}>{openCount}</span>
             )}

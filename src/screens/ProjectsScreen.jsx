@@ -116,41 +116,49 @@ export default function ProjectsScreen({ onOpenProject }) {
 
   return (
     <div className="container">
-      <header style={{ marginBottom: '1rem' }}>
-        <h1>Logistics Helper v3</h1>
-        <p style={{ color: 'var(--text-muted)' }}>Deterministic operations tool for construction logistics</p>
+      <header className="page-header">
+        <p className="eyebrow">Material Logi</p>
+        <h1>Projects</h1>
+        <p className="page-intro">Import a bill of materials, resolve exceptions, and prepare supplier-ready orders.</p>
       </header>
 
-      <div className="card" style={{ marginBottom: '1rem', textAlign: 'center' }}>
-        <h2>Import BOM file</h2>
-        <p style={{ color: 'var(--text-muted)', margin: '0.5rem 0' }}>
+      <div className="card import-card">
+        <h2>Start with a BOM</h2>
+        <p className="muted" style={{ margin: '0.5rem 0' }}>
           Accepts Agent-6 output: <code>.md</code> or <code>.xlsx</code>
         </p>
-        <input
+        <label className={`file-picker${busy ? ' is-busy' : ''}`}>
+          <span>{busy ? 'Import in progress…' : 'Choose BOM file'}</span>
+          <small>.md, .xlsx, or .xls</small>
+          <input
           type="file"
           accept=".md,.markdown,.txt,.xlsx,.xls"
           disabled={busy}
           onChange={(e) => handleFile(e.target.files[0])}
-        />
+          />
+        </label>
       </div>
 
       {progress && (
-        <div className="card" role="status" aria-live="polite" style={{ marginBottom: '1rem' }}>
+        <div className="banner notice" role="status" aria-live="polite">
           {progress}
         </div>
       )}
 
       {status && (
-        <div className="card" style={{ marginBottom: '1rem' }}>
+        <div className="banner notice" role="status">
           {status}
         </div>
       )}
 
-      <h2 style={{ marginBottom: '0.5rem' }}>Projects ({projects.length})</h2>
+      <div className="section-heading">
+        <h2>Your projects</h2>
+        <span className="badge">{projects.length}</span>
+      </div>
       {projects.map((p) => (
-        <div key={p.id} className="card" style={{ marginBottom: '0.5rem' }}>
-          <strong>{p.name}</strong>
-          <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem' }}>
+        <div key={p.id} className="card project-card">
+          <strong className="project-name">{p.name}</strong>
+          <div className="action-row">
             <button onClick={() => onOpenProject(p.id)}>Open</button>
             <button className="secondary danger-ghost" onClick={() => handleDelete(p.id, p.name)}>
               {confirmDeleteId === p.id ? 'Tap again to confirm delete' : 'Delete'}
@@ -164,7 +172,7 @@ export default function ProjectsScreen({ onOpenProject }) {
         </div>
       ))}
       {projects.length === 0 && (
-        <p style={{ color: 'var(--text-muted)' }}>No projects yet — import a file above.</p>
+        <div className="empty-state"><strong>No projects yet</strong><span>Import a file above to create your first project.</span></div>
       )}
     </div>
   );

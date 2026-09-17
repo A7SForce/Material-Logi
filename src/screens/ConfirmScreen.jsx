@@ -45,7 +45,11 @@ const GROUPS = [
   },
 ];
 
-const SEVERITY_BADGE = { HIGH: 'severity-high', MEDIUM: 'severity-medium', LOW: '' };
+const SEVERITY_BADGE = { HIGH: 'severity-high', MEDIUM: 'severity-medium', LOW: 'severity-low' };
+
+// Fixture data mixes cases ("High" vs "HIGH") and includes INFO — normalize before
+// mapping; unknown tiers fall back to the unstyled default badge (word still shows).
+const severityClass = (severity) => SEVERITY_BADGE[String(severity || '').toUpperCase()] || '';
 
 export default function ConfirmScreen({ projectId, onChanged }) {
   const [items, setItems] = useState([]);
@@ -67,7 +71,10 @@ export default function ConfirmScreen({ projectId, onChanged }) {
 
   return (
     <div className="container">
-      <h1>Confirm ({items.length} open)</h1>
+      <header className="page-header compact">
+        <p className="eyebrow">Decision queue</p>
+        <h1>Confirm <span className="muted">({items.length} open)</span></h1>
+      </header>
       {notice && <div className="card" role="status" style={{ margin: '0.5rem 0' }}>{notice}</div>}
       {items.length === 0 && (
         <div className="card"><span className="badge status-ready">Ready — nothing outstanding, PO is unlocked.</span></div>
@@ -82,7 +89,7 @@ export default function ConfirmScreen({ projectId, onChanged }) {
             {rows.map((s) => (
               <div key={s.id} className="card" style={{ marginBottom: '0.5rem' }}>
                 <div>
-                  <span className={`badge ${SEVERITY_BADGE[s.severity] || ''}`}>{s.severity}</span>
+                  <span className={`badge ${severityClass(s.severity)}`}>{s.severity}</span>
                   {' '}<span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{s.owner}</span>
                 </div>
                 <strong>{s.issue}</strong>

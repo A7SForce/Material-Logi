@@ -84,7 +84,10 @@ export default function BomScreen({ projectId, onGoSuppliers }) {
   const [notice, setNotice] = useState(null);
   const [dragId, setDragId] = useState(null);
   const [exporting, setExporting] = useState(false);
-  const [groupBySupplier, setGroupBySupplier] = useState(true);
+  // View is display-only: 'supplier' (default, preserves the fast-order flow),
+  // 'category' (review grouping), 'flat' (raw displayOrder). Stored order,
+  // merge matching, and reorder semantics never see this state.
+  const [view, setView] = useState('supplier');
   const [orderCtx, setOrderCtx] = useState(null); // { supplier, eligible, excluded }
   const [noteDraft, setNoteDraft] = useState('');
   const [orderError, setOrderError] = useState(null);
@@ -105,7 +108,9 @@ export default function BomScreen({ projectId, onGoSuppliers }) {
     joined.sort((a, b) => String(a.businessName).localeCompare(String(b.businessName)));
     setSuppliers(joined);
   };
-  useEffect(() => { reload(); }, [projectId]);
+  useEffect(() => {
+    reload();
+  }, [projectId]);
 
   const ordered = byDisplayOrder(items);
   const supplierById = new Map(suppliers.map((s) => [s.id, s]));
@@ -294,10 +299,10 @@ export default function BomScreen({ projectId, onGoSuppliers }) {
       >
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           <span className="badge" aria-label={`Position ${no}`}>{no}</span>
-          <strong>{item.item}</strong>{' '}
-          {locked.length > 0 && (
-            <span className="badge">🔒 {locked.join(', ')}</span>
-          )}
+                <strong>{item.item}</strong>{' '}
+                {locked.length > 0 && (
+                  <span className="badge locked">🔒 {locked.join(', ')}</span>
+                )}
           <span style={{ marginLeft: 'auto', display: 'flex', gap: '0.25rem' }}>
             <button
               className="secondary"
@@ -364,7 +369,26 @@ export default function BomScreen({ projectId, onGoSuppliers }) {
     );
   };
 
-  const groups = groupBySupplier ? buildGroups() : [{ id: '__all__', supplier: null, items: ordered, flat: true }];
+  // Category grouping is a pure view transform over displayOrder: it never writes
+  // storage, never touches bomRepo/mergeEngine, and toggling away reproduces the
+  // flat list exactly (Ticket 5 invariant review).
+  const buildCategoryGroups = () => {
+    const byCat = new Map();
+    for (const item of ordered) {
+      const cat = item.category || 'Uncategorised';
+      if (!byCat.has(cat)) byCat.set(cat, []);
+      byCat.get(cat).push(item);
+    }
+    return [...byCat.entries()]
+      .sort(([a], [b]) => String(a).localeCompare(String(b)))
+      .map(([category, catItems]) => ({ id: `cat-${category}`, kind: 'category', name: category, items: catItems }));
+  };
+
+  const groups = view === 'supplier'
+    ? buildGroups().map((g) => ({ ...g, kind: g.supplier ? 'supplier' : 'unassigned' }))
+    : view === 'category'
+      ? buildCategoryGroups()
+      : [{ id: '__all__', kind: 'flat', items: ordered }];
 
   return (
     <div className="container">
@@ -373,17 +397,26 @@ export default function BomScreen({ projectId, onGoSuppliers }) {
         <button onClick={exportBom} disabled={exporting}>
           {exporting ? 'Exporting…' : 'Export BOM'}
         </button>
-        <button className="secondary" onClick={() => setGroupBySupplier((v) => !v)}>
-          {groupBySupplier ? 'Show all' : 'Group by supplier'}
+        <button className="secondary" onClick={() => setView('supplier')} aria-pressed={view === 'supplier'}>
+          Suppliers
+        </button>
+        <button className="secondary" onClick={() => setView('category')} aria-pressed={view === 'category'}>
+          Category
+        </button>
+        <button className="secondary" onClick={() => setView('flat')} aria-pressed={view === 'flat'}>
+          All
         </button>
       </div>
       {notice && <div className="card" role="status" style={{ margin: '0.5rem 0' }}>{notice}</div>}
       {items.length === 0 && <p style={{ color: 'var(--text-muted)' }}>No items yet.</p>}
 
       <div className="rowlist">
-        {groups.map((g) => (
-          <section key={g.id || 'unassigned'} aria-label={g.flat ? 'All items' : (g.supplier ? g.supplier.businessName : 'Unassigned')}>
-            {!g.flat && (
+        {groups.map((g, i) => (
+          <section
+            key={g.id || `unassigned-${i}`}
+            aria-label={g.kind === 'flat' ? 'All items' : (g.kind === 'category' ? g.name : (g.supplier ? g.supplier.businessName : 'Unassigned'))}
+          >
+            {(g.kind === 'supplier' || g.kind === 'unassigned') && (
               <div style={{ margin: '0.75rem 0 0.25rem' }}>
                 <h2>{g.supplier ? g.supplier.businessName : 'Unassigned'} ({g.items.length})</h2>
                 <button
@@ -394,6 +427,9 @@ export default function BomScreen({ projectId, onGoSuppliers }) {
                   Order via WhatsApp
                 </button>
               </div>
+            )}
+            {g.kind === 'category' && (
+              <h2 style={{ margin: '0.75rem 0 0.25rem' }}>{g.name} ({g.items.length})</h2>
             )}
             {g.items.map((item) => renderRow(item, ordered.indexOf(item) + 1))}
           </section>

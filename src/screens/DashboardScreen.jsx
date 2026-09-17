@@ -57,7 +57,10 @@ export default function DashboardScreen({ projectId, onGoConfirm }) {
 
   return (
     <div className="container">
-      <h1>{project.name}</h1>
+      <header className="page-header compact">
+        <p className="eyebrow">Project overview</p>
+        <h1>{project.name}</h1>
+      </header>
       {stats.open > 0 ? (
         <div className="banner blocked" role="alert" style={{ marginTop: '1rem' }}>
           <strong>Blocked — {stats.open} open.</strong> PO stays locked until Confirm is clear.
@@ -70,12 +73,14 @@ export default function DashboardScreen({ projectId, onGoConfirm }) {
           <span className="badge status-ready">Ready — PO unlocked</span>
         </div>
       )}
-      <div className="card" style={{ margin: '1rem 0' }}>
-        <div><strong>Material lines:</strong> {stats.lines}</div>
-        <div><strong>Est. total:</strong> <span className="money">{formatCurrency(stats.total)}</span></div>
-        <div><strong>Open confirmations:</strong> {stats.open}</div>
-        <div><strong>Linked suppliers:</strong> {stats.suppliers}</div>
-        <div><strong>Client:</strong> {project.client || '—'}</div>
+      <div className="card dashboard-card">
+        <div className="stat-grid">
+          <div className="stat"><span>Material lines</span><strong>{stats.lines}</strong></div>
+          <div className="stat"><span>Est. total</span><strong className="money">{formatCurrency(stats.total)}</strong></div>
+          <div className="stat"><span>To confirm</span><strong>{stats.open}</strong></div>
+          <div className="stat"><span>Suppliers</span><strong>{stats.suppliers}</strong></div>
+        </div>
+        <div className="project-detail"><strong>Client:</strong> {project.client || '—'}</div>
         <div style={{ marginTop: '0.5rem' }}>
           <label className="small" htmlFor="client-input">Client (optional, manual entry)</label>
           <input

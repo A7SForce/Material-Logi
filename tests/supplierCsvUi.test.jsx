@@ -51,4 +51,15 @@ describe('CSV import confirm-before-commit', () => {
     expect(names).toContain('Fresh Store');
     ui.unmount();
   });
+
+  it('Ticket 1: null contacts never leak as literal NULL text', async () => {
+    const project = await createProject({ name: 'NULL PROBE' });
+    const s = await createSupplier({ businessName: 'No Phone Store', address: 'Betong', contact: null });
+    await linkSupplierToProject({ projectId: project.id, globalSupplierId: s.id });
+    const ui = render(<SuppliersScreen projectId={project.id} />);
+    await ui.findByText('No Phone Store');
+    ui.getByText('Contact not listed');
+    expect(ui.container.textContent).not.toMatch(/\bNULL\b/);
+    ui.unmount();
+  });
 });

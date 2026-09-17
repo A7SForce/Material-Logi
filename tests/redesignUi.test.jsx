@@ -47,10 +47,13 @@ describe('redesign contracts', () => {
     expect(badge.className).toMatch(/tab-badge/);
     expect(badge.getAttribute('aria-label')).toBe('2 open confirmations');
 
-    fireEvent.click(app.getByText('PO', { selector: 'button' }));
+    fireEvent.click(app.getByRole('button', { name: /PO/ }));
     await app.findByText('PO blocked — 2 open. Resolve them on Confirm.');
     // Redirected, not rendered: Confirm heading present, no PO content.
-    await app.findByText('Confirm (2 open)');
+    // (Heading count lives in its own element since the visual polish pass:
+    // tab button "Confirm" + h1 "Confirm" both match, badge span holds the count.)
+    expect(app.getAllByText('Confirm').length).toBeGreaterThanOrEqual(1);
+    await app.findByText('(2 open)');
     // Banner survives effects/ticks — it is context for the redirect, not a flash.
     await new Promise((r) => setTimeout(r, 300));
     app.getByText('PO blocked — 2 open. Resolve them on Confirm.');

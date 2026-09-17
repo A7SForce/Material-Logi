@@ -239,7 +239,9 @@ export default function SuppliersScreen({ projectId }) {
         <div key={`${link.projectId}-${link.globalSupplierId}`} className="card" style={{ marginBottom: '0.5rem' }}>
           <strong>{supplier.businessName}</strong>
           <div style={{ fontSize: '0.875rem' }}>
-            {supplier.contact && <div>Contact: {supplier.contact}</div>}
+            {supplier.contact && !/^null$/i.test(String(supplier.contact).trim())
+              ? <div>Contact: {supplier.contact}</div>
+              : <div style={{ color: 'var(--text-muted)' }}>Contact not listed</div>}
             {supplier.address && <div>{supplier.address}</div>}
             {supplier.specialty && <div>Specialty: {supplier.specialty}</div>}
             {supplier.logisticsNote && <div>Logistics: {supplier.logisticsNote}</div>}

@@ -4,7 +4,7 @@
 
 Pipeline: `logistics_helper_v3_build_pipeline.md` (5 agents). Status: **all 5 agents done, verified**.
 Follow-ups Task A (same-run fixtures) + Task B (dead-file deletion) + Tasks C/D (README count, supplier browser) + Tasks E/F (dedupe key, PO PDF) + Task G (Phase 5 audit): **done, verified** (G4 physical-device test is human-run — checklist below).
-Verification: `npx vitest run` → **28 files, 100 tests, all pass**. `npx vite build` → **green**.
+Verification: `npx vitest run` → **30 files, 108 tests, all pass**. `npx vite build` → **green**.
 
 ## Agent 1 — Parser ✅ (Task A: deep equality, 2026-09-11)
 Files: `src/utils/importParser/{detectFormat,mdReader,xlsxReader,normalize,index}.js`
@@ -51,7 +51,7 @@ and tested); `PoScreen` also re-checks the gate itself and renders a blocked pan
 The old DSG-B-only flow in `App.jsx` was replaced; its dead utils are now deleted (Task B).
 
 ## Agent 5 — QA ✅
-Files: `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport,redesignUi,approvePending,bomMigration,bomReorder,bomExportPdf,itemSupplierPresets,quickOrderGate,quickOrderMessage,quickOrderPhoneNormalize,quickOrderUi,projectMatcher,csvReader,csvExport,supplierCsvImport,supplierCsvUi}.test.{js,jsx}` (Vitest). 100/100 pass.
+Files: `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport,redesignUi,approvePending,bomMigration,bomReorder,bomExportPdf,itemSupplierPresets,quickOrderGate,quickOrderMessage,quickOrderPhoneNormalize,quickOrderUi,projectMatcher,csvReader,csvExport,supplierCsvImport,supplierCsvUi,bomCategoryView,bomCountConsistency}.test.{js,jsx}` (Vitest). 108/108 pass.
 `poGate.test.js` seeds the **real MD sample** (52 lines, 6 open confirmations) and asserts
 PO-request → Confirm redirect, then gate opens after resolving all.
 Test-count note: 14 → 11 was the Task A rewrite (7 shape-only parser tests consolidated into
@@ -70,7 +70,7 @@ Phase 5 "zero Kill List items" audit now passes on presence (remaining Kill List
 never introduced).
 
 ## Task C — README count ✅ (2026-09-11)
-One line: `npx vitest run` comment 14/14 → 11/11 → 13/13 (Task D) → 18/18 (Tasks E/F) → 25 (Task G) → 27 (md rework) → 34 (H-tasks) → 43 (redesign) → 44 (canonical-name) → 53 (L/M) → 83 (fast ordering) → 85 (Task N) → 100 (supplier CSV).
+One line: `npx vitest run` comment 14/14 → 11/11 → 13/13 (Task D) → 18/18 (Tasks E/F) → 25 (Task G) → 27 (md rework) → 34 (H-tasks) → 43 (redesign) → 44 (canonical-name) → 53 (L/M) → 83 (fast ordering) → 85 (Task N) → 100 (supplier CSV) → 104 (slice 8) → 108 (slice 9).
 
 ## Task D — Global supplier browser ✅ (2026-09-11, closes Delta D5)- New `src/logic/supplierLinking.js`: single home of the dedupe-by-normalized-businessName
   rule (`linkSupplierEntry`: find-or-create + link). `seedProject.js` refactored onto it —
@@ -239,6 +239,40 @@ step needs exact counts without writing — no client-side re-deriving). One tes
 correction: overwrite matching needs name AND address (the dedupe key), caught by its own test.
 `supplierLinking.js` imported, never modified. Gate: 100/100 + build green + manual real-data
 round-trip (14 fixture suppliers → export → re-import → 0 created, 14 skipped).
+
+## Visual polish pass ✅ (2026-09-16, parallel agent, landed uncommitted)
+Page-header eyebrows, stat-grid Dashboard, labelled file-picker button, hover/active
+button states, banner-ized status cards, responsive tab-bar + stat rules — all verified
+presentational-only (headers, classes, CSS; zero logic/data changes across `App.jsx`,
+`index.css`, Confirm/Dashboard/Projects screens). One test casualty from split heading
+text (`Confirm (2 open)` → `Confirm` + count span), repaired to the new contract.
+100/100 green after repair.
+
+## Slice 8 — redesign follow-ups ✅ (Tickets 1–6, evidence-led)
+Evidence refreshed first (10 shots on current main; D18 file-picker confirmed fixed;
+shoot.mjs needed exact-text repair as picker labels now carry item names). T1: NULL contacts
+render "Contact not listed". T2: severity value set is {LOW, MEDIUM, HIGH, INFO} mixed-case —
+lookup normalized; LOW gray / MEDIUM amber / HIGH red / INFO default, all contrast-computed.
+T3: locked gets its own cool blue (the real collision was LOW-vs-locked sharing default white).
+T4: 1024px breakpoint re-flows row-lists to grid (markup untouched). T5: display-only category
+grouping with Suppliers/Category/All toggle — default stays Suppliers (deviation from the
+ticket's flat-default: fast-ordering shipped grouped-first and the 1-minute flow depends on
+it; one line to flip if overruled). Reorder/merge/storage untouched; flat toggle reproduces
+displayOrder exactly (tested incl. storage re-read). 100 → 104 tests. Honest limit logged:
+jsdom can't resolve `var()` colors, so tint contracts assert classes + literal computed pairs.
+
+## Slice 9 — redesign follow-ups ✅ (Tickets 7–8, evidence-led)
+T7: Tab bar at 320–390px — Suppliers/PO tabs unreachable on device. Fixed: tab bar switches
+to `overflow-x: auto` with horizontal scroll at ≤640px; buttons use `flex: 0 0 auto` so they
+don't compress below content width; labels switch to short forms (Dash/Cfm/Supp) below the
+breakpoint; hidden scrollbar on WebKit. BOMScreen duplicate-key warning fixed (index-suffixed
+unassigned group keys). All 6 tabs in DOM and tappable at 320px (CSS contract asserted).
+T8: "Unassigned (53)" vs header "BOM (52)" — async load timing bug in test. Rewrote
+`bomCountConsistency.test.jsx` to capture header count AFTER async data loads (wait for rows
+before reading heading). Three tests: flat-view count, supplier-group sum, category-group sum.
+Also cleaned up BomScreen debug console.logs, deleted 3 debug test files (debugHeader 1–3),
+fixed `redesignUi.test.jsx` PO-tab selector to use `getByRole` instead of `getByText` with
+nested-span selector. 108/108 green.
 
 ## Environment fixes (pre-existing, not pipeline scope)
 - `npm install` fails with arborist `edgesOut` on this machine (vitest peer graph) → use
