@@ -305,6 +305,7 @@ Agent 6/7 BOM producers, multi-user backend. (PO PDF + WhatsApp landed in Task F
    not code — 66 counted, 3 fallout failures). Re-ran with `npx vitest run --maxWorkers=2`:
    24 files, 85/85 green. Use constrained workers on small machines.
 - Redeploy 2026-09-17 (Slice 9): 108/108 green, build green, pushed to A7SForce/Material-Logi + redeployed production Ready.
+- Redeploy 2026-09-17 (supplier seed): 113/113 green, build green, pushed (ed8a42f) + redeployed production Ready.
 
 ## Run
 `npm install --legacy-peer-deps` · `npm run dev` · `npx vitest run` · `npx vite build`
