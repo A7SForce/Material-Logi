@@ -302,8 +302,9 @@ Agent 6/7 BOM producers, multi-user backend. (PO PDF + WhatsApp landed in Task F
 - Redeploy 2026-09-15 (Task N): 85/85 green, build green, pushed + redeployed production Ready.
 - Redeploy 2026-09-15 (supplier CSV): 100/100 green, build green, pushed + redeployed production Ready.
 - Infra note 2026-09-15: full-suite default run once OOM-killed workers mid-run (environment,
-  not code — 66 counted, 3 fallout failures). Re-ran with `npx vitest run --maxWorkers=2`:
-  24 files, 85/85 green. Use constrained workers on small machines.
+   not code — 66 counted, 3 fallout failures). Re-ran with `npx vitest run --maxWorkers=2`:
+   24 files, 85/85 green. Use constrained workers on small machines.
+- Redeploy 2026-09-17 (Slice 9): 108/108 green, build green, pushed to A7SForce/Material-Logi + redeployed production Ready.
 
 ## Run
 `npm install --legacy-peer-deps` · `npm run dev` · `npx vitest run` · `npx vite build`
