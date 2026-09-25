@@ -4,7 +4,7 @@
 
 Pipeline: `logistics_helper_v3_build_pipeline.md` (5 agents). Status: **all 5 agents done, verified**.
 Follow-ups Task A (same-run fixtures) + Task B (dead-file deletion) + Tasks C/D (README count, supplier browser) + Tasks E/F (dedupe key, PO PDF) + Task G (Phase 5 audit): **done, verified** (G4 physical-device test is human-run — checklist below).
-Verification: `npx vitest run` → **31 files, 113 tests, all pass**. `npx vite build` → **green**.
+Verification: `npx vitest run` → **32 files, 123 tests, all pass**. `npx vite build` → **green**.
 
 ## Agent 1 — Parser ✅ (Task A: deep equality, 2026-09-11)
 Files: `src/utils/importParser/{detectFormat,mdReader,xlsxReader,normalize,index}.js`
@@ -436,3 +436,17 @@ phone presence, tags mapping. 113/113 green, build green.
 - **Review & Test:** Ran Vitest suite (121/121 tests pass) and Vite build (green).
 - **Push:** Force pushed recent local snapshot history to `origin master`.
 - **Deploy:** Deployed to Vercel production: https://material-logi.vercel.app
+
+## BOM export PDF layout pass ✅ (2026-09-25)
+`bomExportDocument.js`: proper table grid (8 columns, bordered rows), bold header block,
+page-break footers with resolved totals via `putTotalPages` (placeholder never leaks),
+long-text truncation. One real bug fix from the pass: `buildCategoryRollup` now
+initializes `subtotal: null` — a category whose rows are all TBD renders **TBD** in the
+roll-up instead of a zero-filled `RM 0.00` (never inferred, same rule as line rows).
+Test hygiene: the in-progress edit had replaced the 3 real-fixture tests with 2 weaker
+synthetic ones — restored all 3 original tests (52-line fixture, arithmetic roll-up,
+TBD exclusion with 50171.00 byte assertion) and kept the 2 new layout tests as a
+separate describe block, + a regression assert that `{total_pages}` never leaks into
+bytes. 32 files / 123 tests green, build green. Also filed
+`docs/extension/telegram_bot_gaps.md` (post-Lane-6a follow-ups: manual Deal Supplier /
+Lalamove until M8 lands, missing Production/Delivery/Weekly formats, D3 hosting open).

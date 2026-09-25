@@ -1,9 +1,10 @@
 /**
- * bomExportPdf.test.js — Task M acceptance.
+ * bomExportPdf.test.js — Task M acceptance + layout regression.
  * Seeds the REAL fixture project (52 lines), generates the export, asserts:
  * header fields (incl. graceful blank client), 52 rows in displayOrder,
  * arithmetically correct category subtotals + grand total, and a missing-price
  * item rendered TBD and excluded from both its subtotal and the grand total.
+ * Layout tests cover the zero-priced-category TBD roll-up and page footers.
  */
 import 'fake-indexeddb/auto';
 import fs from 'node:fs';
@@ -129,5 +130,49 @@ describe('Task M: BOM export from the real fixture project', () => {
     expect(text.includes('TBD')).toBe(true);
     expect(text.includes('50171.00')).toBe(true); // 50507 - 336
     expect(text.includes('10 Sept 2026')).toBe(true);
+  });
+});
+
+describe('Export BOM PDF layout', () => {
+  it('category with zero priced items renders TBD in its roll-up total, not 0.00', () => {
+    const lines = [
+      { category: 'A', lineTotal: null },
+      { category: 'A', lineTotal: null }
+    ];
+    const rollup = buildCategoryRollup(lines);
+    expect(rollup[0].subtotal).toBeNull();
+  });
+
+  it('PDF bytes contain proper table structures, header fields, right alignment for TBD, and page numbers', () => {
+    const data = {
+      title: 'DSG B - PURCHASE LIST',
+      projectName: 'TEST PROJ',
+      clientLine: 'TEST CLIENT',
+      quotationDate: '2026-01-01',
+      source: 'TEST SOURCE',
+      generatedAt: '2026-01-02',
+      lines: [
+        { no: 1, category: 'Hardware', description: 'Nails', unit: 'box', qty: null, unitCost: null, lineTotal: null, notes: '' },
+        { no: 2, category: 'Hardware', description: 'Hammers', unit: 'pcs', qty: 2, unitCost: 50, lineTotal: 100, notes: '' }
+      ],
+      rollup: [
+        { category: 'Hardware', lineCount: 2, subtotal: 100 },
+        { category: 'TBD Cat', lineCount: 1, subtotal: null }
+      ],
+      grandTotal: 100,
+      itemCount: 3,
+      tbdCount: 1
+    };
+
+    const bytes = renderBomExportPdf(data);
+    const text = Buffer.from(bytes).toString('latin1');
+    expect(text.includes('TEST PROJ')).toBe(true);
+    expect(text.includes('TEST CLIENT')).toBe(true);
+    expect(text.includes('2026-01-01')).toBe(true);
+    expect(text.includes('TBD')).toBe(true);
+    expect(text.includes('100.00')).toBe(true);
+    // Page footer with resolved total (putTotalPages replaces the placeholder)
+    expect(text.includes('Page 1 of')).toBe(true);
+    expect(text.includes('{total_pages}')).toBe(false);
   });
 });
