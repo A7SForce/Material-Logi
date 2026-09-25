@@ -47,6 +47,10 @@ const blobToArrayBuffer = (blob) => {
   });
 };
 
+// Lane 1A: exposed so screens can read the source ONCE and feed both the parser
+// and the scorecard verifier (string/ArrayBuffer short-circuit inside parseImport).
+export { blobToText, blobToArrayBuffer };
+
 /**
  * Parse an import file (File from <input> or { name, buffer/text }) into ParsedImport.
  * @param {File|ArrayBuffer|string} input

@@ -28,6 +28,12 @@
  * ProjectSupplierLink { projectId, globalSupplierId, assignedToItemId? }
  * ChangeLogEntry    { id, projectId, timestamp, actor: "agent" | "supervisor",
  *                     field, oldValue, newValue }
+ * ImportRun         { id, fileType: "md" | "xlsx" | "csv", fileName, projectId,
+ *                     lineCount, sourceLineCount, errors: [], warnings: [],
+ *                     passed: bool, timestamp }
+ *   (Lane 1A — passive trust scorecard. Records every import's verify pass.
+ *     errors/warnings are mismatch objects {field, line, ref, expected, shown}.
+ *     Never blocks an import; never read by merge/seed logic.)
  */
 
 export const MANUAL_REASON_TAGS = ['site', 'missing', 'correction'];
@@ -42,6 +48,7 @@ export const STORES = {
   supplierLinks: '[projectId+globalSupplierId], projectId, globalSupplierId',
   changeLog: 'id, projectId, timestamp',
   presets: 'id, itemKey',
+  importRuns: 'id, projectId, timestamp',
 };
 
 export const SHORTAGE_KINDS = ['agent_question', 'new_item_pending', 'removed_item_pending'];
@@ -93,6 +100,22 @@ export const defaultShortageItem = (partial = {}) => ({
   // Full row snapshot for approvals (new_item_pending carries the incoming row,
   // removed_item_pending carries the stored row). Schemaless extra — not indexed.
   snapshot: partial.snapshot ?? null,
+});
+
+export const IMPORT_FILE_TYPES = ['md', 'xlsx', 'csv'];
+
+/** Fresh defaults for a new ImportRun row (Lane 1A scorecard). */
+export const defaultImportRun = (partial = {}) => ({
+  id: partial.id,
+  fileType: IMPORT_FILE_TYPES.includes(partial.fileType) ? partial.fileType : null,
+  fileName: typeof partial.fileName === 'string' && partial.fileName ? partial.fileName : null,
+  projectId: partial.projectId ?? null,
+  lineCount: typeof partial.lineCount === 'number' ? partial.lineCount : 0,
+  sourceLineCount: typeof partial.sourceLineCount === 'number' ? partial.sourceLineCount : 0,
+  errors: Array.isArray(partial.errors) ? partial.errors : [],
+  warnings: Array.isArray(partial.warnings) ? partial.warnings : [],
+  passed: partial.passed === true,
+  timestamp: partial.timestamp ?? null,
 });
 
 export default STORES;

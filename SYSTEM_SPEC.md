@@ -103,7 +103,7 @@ Mobile-first: bottom-30% primary actions, deterministic progress text, specific 
 | `POGenerator` + WhatsApp | `src/screens/PoScreen.jsx` (Generate PO → jspdf bytes download; wa.me link derived from PDF state, gate unchanged) + `src/logic/poDocument.js` (lines/TBD totals/PDF/link builders) | ✅ Done (D6 closed 2026-09-11) |
 | PO gate rule | `src/screens/poGate.js` (`getPoGate` / `resolveTabRequest`, pure + tested) | ✅ Done |
 | App shell / tab bar | `src/App.jsx` (Projects entry → 5-tab project context) | ✅ Done |
-| Tests | `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport,redesignUi,approvePending,bomMigration,bomReorder,bomExportPdf,itemSupplierPresets,quickOrderGate,quickOrderMessage,quickOrderPhoneNormalize,quickOrderUi,projectMatcher,csvReader,csvExport,supplierCsvImport,supplierCsvUi,bomCategoryView,bomCountConsistency}.test.{js,jsx}` (108/108 pass) + `tests/fixtures/` | ✅ Done |
+| Tests | `tests/{parser,dataLayer,mergeEngine,poGate,supplierBrowser,poPdf,touchTargets,singleSource,e2eLockedField,xlsxUiImport,reimport,projectDelete,e2eFreshImport,redesignUi,approvePending,bomMigration,bomReorder,bomExportPdf,itemSupplierPresets,quickOrderGate,quickOrderMessage,quickOrderPhoneNormalize,quickOrderUi,projectMatcher,csvReader,csvExport,supplierCsvImport,supplierCsvUi,bomCategoryView,bomCountConsistency,manualAddItem,supplierSeed,importScorecard}.test.{js,jsx}` (136/136 pass) + `tests/fixtures/` | ✅ Done |
 | Supplier CSV | `src/utils/csvImport/{csvReader,csvExport,index}.js` + `src/logic/supplierCsvImport.js` + `getAllSuppliersForExport` (stable read) | ✅ Done (D17) |
 
 ## Annex B — Conformance Deltas (decisions, do not revert without a new entry here)
@@ -199,7 +199,7 @@ Mobile-first: bottom-30% primary actions, deterministic progress text, specific 
   console.logs removed; 3 debug test files deleted. `redesignUi` PO-tab selector fixed
   for nested-span label structure.
 
-## Annex C — Agent Work Queue (ordered; pipeline + redesign + L/M + fast ordering + Task N + CSV + slice 8+9 done, verified 113/113 + prod build green)
+## Annex C — Agent Work Queue (ordered; pipeline + redesign + L/M + fast ordering + Task N + CSV + slice 8+9 + Lane 0/1A/1B done, verified 136/136 + prod build green)
 
 ### Core v3 — DONE
 1. **~~Delete dead v1 files~~ DONE 2026-09-11 (Task B):** `src/utils/excelParser/dsgB.js`,
@@ -223,7 +223,7 @@ Mobile-first: bottom-30% primary actions, deterministic progress text, specific 
 | Lane | Title | Status | Key files touched |
 |---|---|---|---|
 | **0** | Verify (no code) | ✅ **DONE 2026-09-21** — report in `docs/extension/Lane0_Verification_Report_2026-09-21.md` | None (read-only) |
-| **1A** | Trust pass tooling (import scorecard) | OPEN — passive overlay, no confirm tap | `importRunRepo.js` ✨, `importScorecard.js` ✨, schema (+ImportRun), db (+v4) |
+| **1A** | Trust pass tooling (import scorecard) | ✅ **DONE 2026-09-25** — passive overlay on every import; Dashboard import-check banner; zero extra taps | `importRunRepo.js` ✨, `importScorecard.js` ✨, schema (+ImportRun), db (+v5) |
 | **1B** | Manual add-item + `isManual` protection | OPEN — phone-first screen; `isManual` survives re-import (Option A/B decision pending) | `AddItemScreen.jsx` ✨, schema (+isManual/source/reasonTag/addedAt), **either** `reimportProject.js` wrapper (A) **or** `mergeEngine.js` guard (B, needs lane approval) |
 | **2** | Sync + backup (Dexie Cloud Option A recommended; spike first) | OPEN — step 0 = options compare (no code), step 1 = spike, step 2 = integrate + status, step 3 = backup/restore | New `src/logic/sync/` ✨ layer, schema (+SyncMeta + soft-delete flags), status badge everywhere |
 | **3** | Stock record (pilot, ~50 lines / 1 project) | OPEN — starting count, arrivals tap, predicted balance, key-item mins, doubtful weekly check | `stockRepo.js` ✨, `stockMovementRepo.js` ✨, `stockBalance.js` ✨, `StockScreen.jsx` ✨, schema (+StockItem/StockMovement + received qty fields) |

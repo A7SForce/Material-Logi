@@ -31,11 +31,11 @@ db.version(2).stores(STORES).upgrade(async (tx) => {
 // Fresh databases already carry it via STORES; upgraded ones gain it here.
 db.version(3).stores(STORES);
 
-// v4: Lane 1B BomItem provenance fields (isManual, source, reasonTag, addedAt).
-// No index changes needed — fields are non-indexed, nullable, never merged.
-// Dexie allows schema-consistent new fields on existing rows via plain writes,
-// so the upgrade is a no-op on existing data (null fields read as null).
+// v4: BomItem provenance fields (Lane 1B) — no new tables, no data migration.
 db.version(4).stores(STORES);
+
+// v5: importRuns table (Lane 1A scorecard). New table only — no data migration.
+db.version(5).stores(STORES);
 
 /** Close the DB (used by tests to simulate "close the app"). */
 export const closeDb = () => db.close();
@@ -63,7 +63,7 @@ export const seedInitialSuppliers = async () => {
 export const clearAllTables = async () => {
   await db.transaction(
     'rw',
-    [db.projects, db.bomItems, db.shortageItems, db.globalSuppliers, db.supplierLinks, db.changeLog, db.presets],
+    [db.projects, db.bomItems, db.shortageItems, db.globalSuppliers, db.supplierLinks, db.changeLog, db.presets, db.importRuns],
     async () => {
       await Promise.all([
         db.projects.clear(),
@@ -73,6 +73,7 @@ export const clearAllTables = async () => {
         db.supplierLinks.clear(),
         db.changeLog.clear(),
         db.presets.clear(),
+        db.importRuns.clear(),
       ]);
     }
   );

@@ -4,7 +4,7 @@
 
 Pipeline: `logistics_helper_v3_build_pipeline.md` (5 agents). Status: **all 5 agents done, verified**.
 Follow-ups Task A (same-run fixtures) + Task B (dead-file deletion) + Tasks C/D (README count, supplier browser) + Tasks E/F (dedupe key, PO PDF) + Task G (Phase 5 audit): **done, verified** (G4 physical-device test is human-run — checklist below).
-Verification: `npx vitest run` → **32 files, 123 tests, all pass**. `npx vite build` → **green**.
+Verification: `npx vitest run` → **33 files, 136 tests, all pass**. `npx vite build` → **green**.
 
 ## Agent 1 — Parser ✅ (Task A: deep equality, 2026-09-11)
 Files: `src/utils/importParser/{detectFormat,mdReader,xlsxReader,normalize,index}.js`
@@ -70,7 +70,7 @@ Phase 5 "zero Kill List items" audit now passes on presence (remaining Kill List
 never introduced).
 
 ## Task C — README count ✅ (2026-09-11)
-One line: `npx vitest run` comment 14/14 → 11/11 → 13/13 (Task D) → 18/18 (Tasks E/F) → 25 (Task G) → 27 (md rework) → 34 (H-tasks) → 43 (redesign) → 44 (canonical-name) → 53 (L/M) → 83 (fast ordering) → 85 (Task N) → 100 (supplier CSV) → 104 (slice 8) → 108 (slice 9) → 113 (supplier seed).
+One line: `npx vitest run` comment 14/14 → 11/11 → 13/13 (Task D) → 18/18 (Tasks E/F) → 25 (Task G) → 27 (md rework) → 34 (H-tasks) → 43 (redesign) → 44 (canonical-name) → 53 (L/M) → 83 (fast ordering) → 85 (Task N) → 100 (supplier CSV) → 104 (slice 8) → 108 (slice 9) → 113 (supplier seed) → 121 (Lane 1B) → 123 (PDF layout) → 136 (Lane 1A).
 
 ## Task D — Global supplier browser ✅ (2026-09-11, closes Delta D5)- New `src/logic/supplierLinking.js`: single home of the dedupe-by-normalized-businessName
   rule (`linkSupplierEntry`: find-or-create + link). `seedProject.js` refactored onto it —
@@ -450,3 +450,35 @@ separate describe block, + a regression assert that `{total_pages}` never leaks 
 bytes. 32 files / 123 tests green, build green. Also filed
 `docs/extension/telegram_bot_gaps.md` (post-Lane-6a follow-ups: manual Deal Supplier /
 Lalamove until M8 lands, missing Production/Delivery/Weekly formats, D3 hosting open).
+
+## Lane 1A — Import scorecard (trust pass tooling) ✅ (2026-09-25, 13 new tests, 136/136 green)
+Passive trust overlay on every import — no confirm step, no gate, never blocks.
+- `src/logic/importScorecard.js` (pure): `scoreBomImport` independently re-extracts the
+  Master BOM data rows from the raw source (md: `splitSections`/`classifySection`/
+  `isSeparatorRow` reuse; xlsx: one in-memory `XLSX.read` of the already-loaded buffer)
+  and compares line count, item names (multiset), purchase qty, unit cost, unit, total
+  against the parsed `ParsedImport`, plus internal total integrity (estTotal vs
+  qty×cost). Row guards mirror the parser exactly — incl. two mirror-rules discovered
+  the hard way: qty column is **Purchase Qty only** ('Net Qty' precedes it in the header
+  and is a different number), and null-normalizing names (`NaN`, `—`, `-`) are not items
+  (`buildParsedImport` filters them). `scoreSupplierCsv` reports in-file duplicates by
+  the shared `linkKey`, rejected rows (errors) and blank contact/address (warnings).
+- `ImportRun` table (Dexie **v5**, new table only) + `importRunRepo` (create, list,
+  latest, latestBomImportRun — the Dashboard check never shows a CSV run).
+- Wiring: `ProjectsScreen` reads the source ONCE (string/ArrayBuffer short-circuit
+  inside `parseImport` — `blobToText`/`blobToArrayBuffer` now exported) and feeds both
+  parser and verifier; scorecard appends to the status banner. `SuppliersScreen`
+  scores at CSV confirm and appends `scorecardLine`. `DashboardScreen` shows a passive
+  "Import check: PASSED/FAILED — X/Y lines, N errors · date" banner (first 3 mismatches
+  listed on FAILED), newest BOM run for the project.
+- Acceptance proven: Qwen md 52/52 PASSED, pandas-export md 52/52 PASSED, same-run
+  xlsx 52/52 PASSED, CSV round-trip PASSED — all zero errors. Loud failures:
+  source-inconsistent total (555→557), dropped parsed row (line_count + item_name),
+  qty drift (9 vs 5), CSV duplicates + rejected rows; blank CSV fields stay warnings.
+  `mergeEngine.js`, `poGate.js`, `supplierLinking.js`, `poDocument.js` untouched.
+
+## Extension decisions 2026-09-25 (recorded in docs/extension/DECISIONS_LOG.md)
+Naqib confirmed: next lane = **Lane 1A** (this entry); stock design = **Option A**
+(pure workshop stock, BOMs separate; "need minus have" reconsidered later); balance
+reminder = **A + B** (Telegram ping + in-app badge). Key-items list edits still
+pending from Naqib (blocks Lane 3 build start).

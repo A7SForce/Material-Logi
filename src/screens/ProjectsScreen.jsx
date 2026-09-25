@@ -5,10 +5,19 @@
  */
 import React, { useEffect, useState } from 'react';
 import { listProjects, createProject, deleteProject } from '../data/projectRepo.js';
-import { parseImport, friendlyImportError, isEmptyImport } from '../utils/importParser/index.js';
+import {
+  parseImport,
+  friendlyImportError,
+  isEmptyImport,
+  detectFormat,
+  blobToText,
+  blobToArrayBuffer,
+} from '../utils/importParser/index.js';
 import { matchProject } from '../logic/projectMatcher.js';
 import { reimportProject } from '../logic/reimportProject.js';
 import { seedProjectFromImport } from '../logic/seedProject.js';
+import { scoreBomImport, scorecardLine } from '../logic/importScorecard.js';
+import { createImportRun } from '../data/importRunRepo.js';
 import * as bomRepo from '../data/bomRepo.js';
 import * as shortageRepo from '../data/shortageRepo.js';
 import * as supplierRepo from '../data/supplierRepo.js';
@@ -77,30 +86,38 @@ export default function ProjectsScreen({ onOpenProject }) {
     setStatus(null);
     try {
       setProgress('Parsing import…');
-      const { format, parsed } = await parseImport(file, file.name);
+      // Read the source once; parseImport short-circuits for string/ArrayBuffer,
+      // and the same source feeds the Lane 1A scorecard verifier.
+      const format = detectFormat(file.name);
+      const source = format === 'md' ? await blobToText(file) : await blobToArrayBuffer(file);
+      const { parsed } = await parseImport(source, file.name);
       if (isEmptyImport(parsed)) {
         setStatus(friendlyImportError(new Error('no recognizable BOM content')));
         return;
       }
+      // Passive trust pass: independent recount + per-line compare vs the source.
+      const score = scoreBomImport({ format, parsed, source });
       setProgress('Matching project…');
       const match = await matchProject(parsed.projectTitle);
       setProgress('Saving…');
       if (match.action === 'match') {
         const result = await reimportProject(match.project.id, parsed, reimportDeps);
+        await createImportRun({ ...score, fileName: file.name, projectId: match.project.id });
         setStatus(
           `Merged ${format} into "${match.project.name}": ` +
           `${result.updatedCount} updated, ${result.newPendingIds.length} new-pending, ` +
           `${result.removedPendingIds.length} removed-pending, ${result.skippedLocked.length} locked-skipped, ` +
-          `${result.supplierCount} suppliers linked.`
+          `${result.supplierCount} suppliers linked. ${scorecardLine(score)}`
         );
         await reload();
         onOpenProject(match.project.id);
       } else {
         const project = await createProject({ name: parsed.projectTitle });
         const seed = await seedProjectFromImport(project.id, parsed, seedDeps);
+        await createImportRun({ ...score, fileName: file.name, projectId: project.id });
         setStatus(
           `Created "${project.name}": ${seed.bomCount} BOM lines, ` +
-          `${seed.shortageCount} confirmations, ${seed.supplierCount} suppliers.`
+          `${seed.shortageCount} confirmations, ${seed.supplierCount} suppliers. ${scorecardLine(score)}`
         );
         await reload();
         onOpenProject(project.id);

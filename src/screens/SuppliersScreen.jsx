@@ -10,6 +10,8 @@ import { linkSupplierEntry } from '../logic/supplierLinking.js';
 import { importSupplierRows } from '../logic/supplierCsvImport.js';
 import { parseSupplierCsv, readUploadAsText } from '../utils/csvImport/index.js';
 import { exportSupplierDirectory } from '../utils/csvImport/csvExport.js';
+import { scoreSupplierCsv, scorecardLine } from '../logic/importScorecard.js';
+import { createImportRun } from '../data/importRunRepo.js';
 
 const linkDeps = { listSuppliers, createSupplier, linkSupplierToProject };
 
@@ -93,7 +95,7 @@ export default function SuppliersScreen({ projectId }) {
       const { validRows, rejectedRows } = parseSupplierCsv(await readUploadAsText(file));
       // dryRun: identical counting, zero writes — the preview commits nothing.
       const preview = await importSupplierRows(validRows, { dryRun: true }, csvImportDeps);
-      setPendingCsv({ validRows, rejectedRows, preview });
+      setPendingCsv({ validRows, rejectedRows, preview, fileName: file.name });
       setOverwrite(false);
     } catch (err) {
       setNotice(`Couldn't read that CSV — check it has a businessName column.`);
@@ -103,6 +105,14 @@ export default function SuppliersScreen({ projectId }) {
   const confirmCsvImport = async () => {
     if (!pendingCsv) return;
     const result = await importSupplierRows(pendingCsv.validRows, { overwriteExisting: overwrite }, csvImportDeps);
+    // Lane 1A passive trust pass: duplicates, rejected rows, blank-field warnings.
+    const score = scoreSupplierCsv({ validRows: pendingCsv.validRows, rejectedRows: pendingCsv.rejectedRows });
+    try {
+      await createImportRun({ ...score, fileName: pendingCsv.fileName ?? null, projectId });
+    } catch (e) {
+      // Scorecard recording must never block the import itself.
+      console.error('ImportRun not recorded:', e);
+    }
     const bits = [
       `${result.created} created`,
       `${result.skipped} already existed (skipped)`,
@@ -111,7 +121,7 @@ export default function SuppliersScreen({ projectId }) {
     if (pendingCsv.rejectedRows.length > 0) {
       bits.push(`${pendingCsv.rejectedRows.length} rejected (${pendingCsv.rejectedRows.map((r) => `row ${r.rowNumber}: ${r.reason}`).join('; ')})`);
     }
-    setNotice(bits.join(' · ') + '.');
+    setNotice(bits.join(' · ') + '. ' + scorecardLine(score));
     setPendingCsv(null);
     setOverwrite(false);
     await reloadLinks();

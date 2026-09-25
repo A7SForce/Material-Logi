@@ -9,6 +9,7 @@ import { listBomItems } from '../data/bomRepo.js';
 import { countUnresolved } from '../data/shortageRepo.js';
 import { listProjectSuppliers } from '../data/supplierRepo.js';
 import { listChangeLog } from '../data/changeLogRepo.js';
+import { latestBomImportRun } from '../data/importRunRepo.js';
 import { formatCurrency, formatShortDate } from '../utils/helpers.js';
 
 /** Storage row -> plain site-diary sentence. No field names leak to the screen. */
@@ -23,16 +24,18 @@ export default function DashboardScreen({ projectId, onGoConfirm }) {
   const [project, setProject] = useState(null);
   const [stats, setStats] = useState({ lines: 0, total: 0, open: 0, suppliers: 0 });
   const [recent, setRecent] = useState([]);
+  const [lastImportRun, setLastImportRun] = useState(null);
   const [clientDraft, setClientDraft] = useState('');
   const [clientSaved, setClientSaved] = useState(false);
 
   const reload = async () => {
-    const [p, items, open, links, log] = await Promise.all([
+    const [p, items, open, links, log, lastRun] = await Promise.all([
       getProject(projectId),
       listBomItems(projectId),
       countUnresolved(projectId),
       listProjectSuppliers(projectId),
       listChangeLog(projectId),
+      latestBomImportRun(projectId),
     ]);
     setProject(p);
     if (p) setClientDraft(p.client || '');
@@ -43,6 +46,7 @@ export default function DashboardScreen({ projectId, onGoConfirm }) {
       suppliers: links.length,
     });
     setRecent(log.slice(-5).reverse());
+    setLastImportRun(lastRun);
   };
 
   useEffect(() => { reload(); }, [projectId]);
@@ -71,6 +75,23 @@ export default function DashboardScreen({ projectId, onGoConfirm }) {
       ) : (
         <div style={{ marginTop: '1rem' }}>
           <span className="badge status-ready">Ready — PO unlocked</span>
+        </div>
+      )}
+      {lastImportRun && (
+        <div
+          className={`banner ${lastImportRun.passed ? 'notice' : 'blocked'}`}
+          role="status"
+          style={{ marginTop: '0.75rem' }}
+        >
+          <strong>Import check: {lastImportRun.passed ? 'PASSED' : 'FAILED'}</strong>
+          {' — '}{lastImportRun.lineCount}/{lastImportRun.sourceLineCount} lines, {lastImportRun.errors.length} error{lastImportRun.errors.length === 1 ? '' : 's'}
+          {lastImportRun.warnings.length > 0 ? `, ${lastImportRun.warnings.length} warning${lastImportRun.warnings.length === 1 ? '' : 's'}` : ''}
+          {' · '}{formatShortDate(lastImportRun.timestamp)}
+          {!lastImportRun.passed && lastImportRun.errors.slice(0, 3).map((m, i) => (
+            <div key={i} className="small" style={{ marginTop: '0.25rem' }}>
+              {m.field}{m.ref ? ` (${m.ref})` : ''}{m.line ? ` · line ${m.line}` : ''}: expected {String(m.expected)}, shown {String(m.shown)}
+            </div>
+          ))}
         </div>
       )}
       <div className="card dashboard-card">
