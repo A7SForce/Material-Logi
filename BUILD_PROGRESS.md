@@ -482,3 +482,30 @@ Naqib confirmed: next lane = **Lane 1A** (this entry); stock design = **Option A
 (pure workshop stock, BOMs separate; "need minus have" reconsidered later); balance
 reminder = **A + B** (Telegram ping + in-app badge). Key-items list edits still
 pending from Naqib (blocks Lane 3 build start).
+
+## Lane 2 step 0 + gated integration ✅ (2026-09-25, 139/139 green, build green)
+**Step 0 (no code):** sync options compared from official sources — `Lane2_Sync_Options_Comparison.md`.
+Naqib picked **Dexie Cloud (Option A)**: offline-first, additive, free tier (3 seats / 100 MB)
+covers 1 user + 2 devices forever. Honest risks recorded: `@id` PK question (#1 spike item),
+conflict semantics, encryption-key management for restore (Lane 4 design task).
+**Gated integration (inert by construction):** `dexie-cloud-addon` installed; `db.js` registers
+the addon + `db.cloud.configure(requireAuth)` ONLY when `VITE_DEXIE_CLOUD_URL` exists at build
+time — tests and unconfigured prod run plain Dexie, zero behavior change. `generateId` now prefers
+`crypto.randomUUID` (globally-unique sync collision model). New `syncStatus.js` + a fixed
+"Local only / Syncing… / Synced / Offline" chip in the app shell (reports, never blocks).
+`tests/syncStatus.test.js` (3): cloud not configured in test build, honest labels, 500-id
+uniqueness. **Spike protocol ready:** `Lane2_Spike_Protocol.md` — Naqib runs
+`npx dexie-cloud create` + `whitelist`, sends the URL, two-device must-pass tests S1–S5.
+Consistency-doc findings baked in: v3's `update(id, patch)` repo pattern gives per-field
+conflict avoidance (latest-write-wins per field) — matching the architecture's proposed rule.
+
+## NAQIB Daily Bot v2 — architecture review + docs imported ✅ (2026-09-28)
+Phase 2 architecture + Phase 3 agent pipeline (7 agents, 8 proof-gated slices) imported to
+`docs/extension/naqib-daily-bot-v2/`. Every carry-over claim verified against the real repos:
+Teleport's `compiler.py` (exact BM prompt + 7-key JSON contract, live-validated on Groq 7/7 keys
+in 4.6 s), `formatter.py` (real `.docx`), SQLite input swap as specified, Oracle Always Free
+host prepped (SSH key + compose; VM pending Naqib's OCI signup), `lh_bot_6a/topics.json`
+(exactly 10 topics + projectRefresh). Three porting notes recorded (6a is JS — only topics.json
+ports verbatim; Groq model-drift hazard; single-poller cutover). `telegram_bot_gaps.md` → all
+three gaps superseded by v2. SYSTEM_SPEC Annex C: 1B + 6a rows corrected (both had shipped),
+Lane 2 updated, new **DB2** lane approved — **build next**. Zero v3 web-app code touched.
