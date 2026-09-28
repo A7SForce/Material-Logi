@@ -1,12 +1,30 @@
 /**
  * db.js — Agent 2: IndexedDB setup (Dexie). Local, on-device, survives app close.
  * No server for this version.
+ *
+ * Lane 2 (Dexie Cloud, picked 2026-09-25): sync is OPT-IN and fully inert until
+ * VITE_DEXIE_CLOUD_URL is set at build time. Without it, this is plain Dexie on
+ * IndexedDB — exactly the pre-Lane-2 app, all tests included. With it, the
+ * dexie-cloud-addon registers and db.cloud.configure() wires the free-tier
+ * cloud copy (requireAuth so only the owner's email can sync; data stays in the
+ * account's private realm). v3 stays first: the cloud is a copy, not the boss.
  */
 import Dexie from 'dexie';
+import dexieCloud from 'dexie-cloud-addon';
 import { DB_NAME, STORES } from './schema.js';
 import seedSuppliers from './seedSuppliers.json';
 
-export const db = new Dexie(DB_NAME);
+// Empty when unset (tests, local dev, unconfigured prod) — addon never registers.
+const SYNC_DB_URL = (import.meta.env && import.meta.env.VITE_DEXIE_CLOUD_URL) || null;
+
+export const db = new Dexie(DB_NAME, SYNC_DB_URL ? { addons: [dexieCloud] } : undefined);
+
+if (SYNC_DB_URL) {
+  db.cloud.configure({
+    databaseUrl: SYNC_DB_URL,
+    requireAuth: true, // only the owner's email OTP can sync; private realm by default
+  });
+}
 
 db.version(1).stores(STORES);
 

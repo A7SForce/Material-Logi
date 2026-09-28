@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "dexie": "^4.4.6",
+    "dexie-cloud-addon": "^4.4.15",
     "jspdf": "^4.1.0",
     "lucide-react": "^0.446.0",
     "react": "^18.3.1",

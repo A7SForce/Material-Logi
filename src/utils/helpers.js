@@ -2,8 +2,15 @@
  * helpers.js — Pure utility functions for Logistics Helper v3
  */
 
-/** Generate a unique ID for items */
+/**
+ * Generate a unique ID for items. Prefers crypto.randomUUID (Lane 2: globally
+ * unique across offline devices — the sync collision model), falls back to the
+ * timestamp-random form for environments without crypto.randomUUID.
+ */
 export const generateId = () => {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
     return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
 };
 

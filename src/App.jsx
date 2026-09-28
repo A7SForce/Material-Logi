@@ -20,6 +20,7 @@ import AddItemScreen from './screens/AddItemScreen.jsx';
 import { resolveTabRequest } from './screens/poGate.js';
 import { countUnresolved } from './data/shortageRepo.js';
 import { seedInitialSuppliers } from './data/db.js';
+import { isSyncEnabled, getSyncInfo, subscribeSyncStatus, syncStatusLabel } from './data/syncStatus.js';
 import * as bomRepo from './data/bomRepo.js';
 import { appendChangeLog } from './data/changeLogRepo.js';
 
@@ -46,9 +47,19 @@ export default function App() {
   const [subScreen, setSubScreen] = useState(null);
   const [gateNotice, setGateNotice] = useState(null);
   const [openCount, setOpenCount] = useState(0);
+  // Lane 2: visible sync state ("Local only" until a cloud DB is configured).
+  const [syncInfo, setSyncInfo] = useState(isSyncEnabled() ? getSyncInfo() : null);
 
   // Seed the global supplier directory on first load (no-op if already populated).
   useEffect(() => { seedInitialSuppliers(); }, []);
+
+  // Lane 2: subscribe to cloud status changes (no-op when sync isn't configured).
+  useEffect(() => {
+    if (!isSyncEnabled()) return undefined;
+    setSyncInfo(getSyncInfo());
+    const unsub = subscribeSyncStatus(() => setSyncInfo(getSyncInfo()));
+    return () => { if (unsub) unsub(); };
+  }, []);
 
   // Live badge count: re-read on project/tab change and after Confirm actions.
   const refreshGate = async (id) => {
@@ -138,6 +149,21 @@ export default function App() {
       {tab === 'confirm' && <ConfirmScreen projectId={projectId} onChanged={() => refreshGate(projectId)} />}
       {tab === 'suppliers' && <SuppliersScreen projectId={projectId} />}
       {tab === 'po' && <PoScreen projectId={projectId} onGoConfirm={() => setTab('confirm')} />}
+
+      {/* Lane 2: visible sync state — reports, never blocks. Fixed above the tab bar. */}
+      <div
+        role="status"
+        aria-label={`Sync status: ${syncStatusLabel(syncInfo)}`}
+        style={{
+          position: 'fixed', right: '0.5rem', bottom: '5.5rem', zIndex: 90,
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          borderRadius: '999px', padding: '0.25rem 0.6rem',
+          fontSize: '0.75rem', color: 'var(--text-muted)',
+          boxShadow: 'var(--shadow)', pointerEvents: 'none',
+        }}
+      >
+        {syncStatusLabel(syncInfo)}
+      </div>
 
       <nav className="tab-bar" aria-label="Project sections">
         <button onClick={() => { setProjectId(null); setTab('dashboard'); }}>
