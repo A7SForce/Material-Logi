@@ -1,0 +1,113 @@
+{
+  "_comment": "Data-driven topic list for Lane 6a. Edit this file to add/remove topics — NO rebuild required.  The first topic that matches a weekday/time window is triggered.  Each prompt is a single topic.  End-of-day check-in asks every topic (sequentially) unless `optional: true` + user said skip.",
+  "topics": [
+    {
+      "id": "weekly_meeting",
+      "title": "Weekly Meeting",
+      "prompt": "Ada meeting mingguan harini? (Tajuk / perbincangan / keputusan)",
+      "outputField": "weeklyMeeting",
+      "formatKey": "weeklyMeeting",
+      "optional": true,
+      "weekdays": [1],
+      "order": 1
+    },
+    {
+      "id": "project_briefing",
+      "title": "Project briefing",
+      "prompt": "Project briefing apa harini? (projek baru / brief klien / tukar spec)",
+      "outputField": "projectBriefing",
+      "formatKey": "projectBriefing",
+      "optional": true,
+      "order": 2
+    },
+    {
+      "id": "discussion",
+      "title": "Discussion",
+      "prompt": "Discussion dengan team / supplier / site apa harini?",
+      "outputField": "discussion",
+      "formatKey": "discussion",
+      "optional": true,
+      "order": 3
+    },
+    {
+      "id": "deal_supplier",
+      "title": "Deal Supplier",
+      "prompt": "Deal supplier mana harini? (Nama supplier, item ordered, project)",
+      "outputField": "dealSupplier",
+      "formatKey": "dealSupplier",
+      "optional": false,
+      "order": 4
+    },
+    {
+      "id": "production",
+      "title": "Production",
+      "prompt": "Production status harini? (Benda yang check / susun / semak)",
+      "outputField": "production",
+      "formatKey": "production",
+      "optional": false,
+      "order": 5
+    },
+    {
+      "id": "logistic",
+      "title": "Logistic",
+      "prompt": "Logistic harini? (Urus item, rekod inventori, prepare material)",
+      "outputField": "logistic",
+      "formatKey": "logistic",
+      "optional": false,
+      "order": 6
+    },
+    {
+      "id": "lalamove",
+      "title": "Lalamove",
+      "prompt": "Lalamove / delivery book berapa trip harini?",
+      "outputField": "lalamove",
+      "formatKey": "lalamove",
+      "optional": false,
+      "order": 7
+    },
+    {
+      "id": "item_on_site",
+      "title": "Item on site",
+      "prompt": "Item sampai site apa harini? (Nama item + kuantiti + project)",
+      "outputField": "itemOnSite",
+      "formatKey": "itemOnSite",
+      "optional": false,
+      "order": 8
+    },
+    {
+      "id": "point_learned",
+      "title": "Point learned",
+      "prompt": "Apa point yang saya dapat harini? (1 line je, atau '-')",
+      "outputField": "pointLearned",
+      "formatKey": "pointLearned",
+      "optional": true,
+      "order": 9
+    },
+    {
+      "id": "obstacles",
+      "title": "Halangan / isu",
+      "prompt": "Halangan / isu harini? (Tiada isu besar / real issue)",
+      "outputField": "obstacles",
+      "formatKey": "obstacles",
+      "optional": false,
+      "defaultIfEmpty": "Tiada",
+      "order": 10
+    }
+  ],
+  "projectRefresh": {
+    "mondayMorning": {
+      "id": "projects_monday",
+      "prompt": "Senarai project aktif minggu ni (satu line setiap project).\nContoh:\n- Surau Darul Dakwah\n- Kediaman Puan Hashima",
+      "outputField": "projects",
+      "weekday": 1,
+      "hourBefore": 10
+    },
+    "fridayAfternoon": {
+      "id": "projects_friday",
+      "prompt": "Kemaskini senarai project (siap / tamat / baru mulai)?\nList semula semua project aktif hujung minggu ni.",
+      "outputField": "projects",
+      "weekday": 5,
+      "hourAfter": 15
+    }
+  }
+}

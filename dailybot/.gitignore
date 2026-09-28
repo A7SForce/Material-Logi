@@ -1,0 +1,15 @@
+# Runtime data — Naqib's personal answers live on the Oracle VM, never in git
+data/daily/*
+data/items/*
+data/reports/*
+!data/daily/.gitkeep
+!data/items/.gitkeep
+!data/reports/.gitkeep
+
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
