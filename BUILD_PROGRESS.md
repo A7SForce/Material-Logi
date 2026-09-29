@@ -509,3 +509,19 @@ host prepped (SSH key + compose; VM pending Naqib's OCI signup), `lh_bot_6a/topi
 ports verbatim; Groq model-drift hazard; single-poller cutover). `telegram_bot_gaps.md` → all
 three gaps superseded by v2. SYSTEM_SPEC Annex C: 1B + 6a rows corrected (both had shipped),
 Lane 2 updated, new **DB2** lane approved — **build next**. Zero v3 web-app code touched.
+
+## Daily Bot v2 — Slices 0–2 in build (2026-09-29, per-slice handoffs in dailybot/docs/build/)
+**Slice 0 ✅** scaffold per Architecture §6 — `dailybot/data/` tree, topics.json copied verbatim
+(SHA-256 identical to the 6a source), `projects.json` seed `{"projects": []}`, runtime dirs
+gitignored (personal answers live on the Oracle VM, never in git). **Slice 1 ✅** touchpoint
+clock — `bot/scheduler.py` TOUCHPOINTS table + pure `due_touchpoints(now)`; fast-forwarded
+sim proof: one virtual week, 26/26 firing events at correct times in order (13:15/16:30/16:50/
+17:00 Mon–Sat + Mon 10:00 refresh-in + Fri 15:00 refresh-out; Sunday silent). Chunk weekdays
+defaulted Mon–Sat — flagged for Naqib. **Slice 2 code-complete** — Telegram wiring (dumb version):
+`chunks.py`, `topics.py`, `store.py` (§6.2 daily shape), `main.py` (APScheduler KL crons from
+TOUCHPOINTS, midday first-question send, reply→store, `/test`, `/status`). Live Stage-A proof:
+`getMe` 200 (@A7Prod_bot), all 6 jobs armed KL — then `sendMessage` **403 Forbidden**: Naqib has
+never started the bot's chat (Teleport's live triplet was never run either). **Slice 2 round-trip
+waits on one human step: Naqib opens @A7Prod_bot and presses Start.** Token-bearing run logs
+deleted + `logs_*.txt` gitignored before commit; `.env` gitignored and verified. Deps reused
+from Teleport's install (python-telegram-bot 21.9, APScheduler 3.10.4).

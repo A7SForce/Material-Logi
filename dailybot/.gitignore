@@ -13,3 +13,6 @@ data/reports/*
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Local run logs (may contain tokens in URLs - never commit)
+logs_*.txt
